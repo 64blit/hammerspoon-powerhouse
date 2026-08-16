@@ -16,7 +16,6 @@ local ZK_NOTES_DIR = env.get("ZETTELKASTEN_NOTES_DIR", home .. "/Documents/_SPAC
 -- Zettelkasten Helpers
 -------------------------------------------------
 local function generateZkId()
-    -- Format: YYYYMMDDTHHMMSSffffff
     local now = os.date("%Y%m%dT%H%M%S")
     local ms = math.floor((hs.timer.absoluteTime() / 1000000) % 1000000)
     return string.format("%s%06d000", now, ms)
@@ -76,6 +75,7 @@ updated: '%s'
             informativeText = string.format("Saved: %s", title)
         }):send()
         hs.alert.show("🧠 Zettel Note Saved!", 2)
+        hs.task.new("/usr/bin/open", nil, { filePath }):start()
         return true, filePath
     else
         hs.alert.show("❌ Failed to write Zettel note", 3)
@@ -83,8 +83,8 @@ updated: '%s'
     end
 end
 
-local function promptCreateZettelNote(initialContent)
-    local btn1, title = hs.dialog.textPrompt("New Zettelkasten Note", "Enter Note Title:", "", "Next", "Cancel")
+local function promptCreateZettelNote(initialContent, initialTitle)
+    local btn1, title = hs.dialog.textPrompt("New Zettelkasten Note", "Enter Note Title:", initialTitle or "", "Next", "Cancel")
     if btn1 ~= "Next" or not title or title == "" then return end
 
     local btn2, tags = hs.dialog.textPrompt("Note Tags", "Enter comma-separated tags (e.g. architecture, fleet, api):", "", "Next", "Cancel")
@@ -100,13 +100,16 @@ local function promptCreateZettelNote(initialContent)
     end
 end
 
-local function searchZettelkasten(query)
+local function searchZettelkasten(rawQuery)
     if not hs.fs.attributes(ZK_NOTES_DIR) then
         hs.alert.show("Notes directory not found: " .. ZK_NOTES_DIR, 3)
         return
     end
 
-    if not query or query == "" then
+    local query = (rawQuery or ""):gsub("^%s*(.-)%s*$", "%1")
+    query = query:gsub("^/?zk%s*", ""):gsub("^/?note%s*", "")
+
+    if query == "" then
         local btn, q = hs.dialog.textPrompt("Search Zettelkasten Memory", "Enter search term (title, tag, or content):", "", "Search", "Cancel")
         if btn == "Search" and q and q ~= "" then
             query = q
@@ -116,32 +119,61 @@ local function searchZettelkasten(query)
         end
     end
 
-    local cmd = string.format("cd %q && grep -inR --exclude='.*' %q .", ZK_NOTES_DIR, query)
-    hs.task.new("/bin/bash", function(rc, out, err)
-        if rc == 0 and out and out ~= "" then
-            local choice = hs.dialog.blockAlert(
-                string.format("🧠 Zettelkasten Results (%q)", query),
-                out,
-                "Open Notes Folder",
-                "Close"
-            )
-            if choice == "Open Notes Folder" then
-                hs.task.new("/usr/bin/open", nil, { ZK_NOTES_DIR }):start()
-            end
-        else
-            local choice = hs.dialog.blockAlert(
-                "Zettelkasten Search",
-                string.format("No notes found matching %q in %s.", query, ZK_NOTES_DIR),
-                "Create Note with this Title",
-                "Open Folder"
-            )
-            if choice == "Create Note with this Title" then
-                promptCreateZettelNote()
-            elseif choice == "Open Folder" then
-                hs.task.new("/usr/bin/open", nil, { ZK_NOTES_DIR }):start()
+    local matches = {}
+    for file in hs.fs.dir(ZK_NOTES_DIR) do
+        if file:match("%.md$") then
+            local fullPath = ZK_NOTES_DIR .. "/" .. file
+            local f = io.open(fullPath, "r")
+            if f then
+                local content = f:read("*a")
+                f:close()
+                local title = content:match("title:%s*([^\n]+)") or file
+                local tags = content:match("tags:(.-)title:") or ""
+                
+                local queryLower = query:lower()
+                if title:lower():find(queryLower, 1, true) or tags:lower():find(queryLower, 1, true) or content:lower():find(queryLower, 1, true) then
+                    table.insert(matches, {
+                        path = fullPath,
+                        file = file,
+                        title = title:gsub("^['\"]", ""):gsub("['\"]$", ""),
+                        content = content
+                    })
+                end
             end
         end
-    end, { "-lc", cmd }):start()
+    end
+
+    if #matches == 1 then
+        local note = matches[1]
+        hs.alert.show(string.format("🧠 Opened: %s", note.title), 2)
+        hs.task.new("/usr/bin/open", nil, { note.path }):start()
+    elseif #matches > 1 then
+        local summary = ""
+        for i, m in ipairs(matches) do
+            summary = summary .. string.format("%d. %s\n", i, m.title)
+        end
+        local choice = hs.dialog.blockAlert(
+            string.format("🧠 Found %d Matching Notes for %q", #matches, query),
+            summary,
+            "Open Notes Folder",
+            "Close"
+        )
+        if choice == "Open Notes Folder" then
+            hs.task.new("/usr/bin/open", nil, { ZK_NOTES_DIR }):start()
+        end
+    else
+        local choice = hs.dialog.blockAlert(
+            "Zettelkasten Search",
+            string.format("No notes found matching %q in %s.", query, ZK_NOTES_DIR),
+            "Create Note with this Title",
+            "Open Folder"
+        )
+        if choice == "Create Note with this Title" then
+            promptCreateZettelNote(nil, query)
+        elseif choice == "Open Folder" then
+            hs.task.new("/usr/bin/open", nil, { ZK_NOTES_DIR }):start()
+        end
+    end
 end
 
 -------------------------------------------------
@@ -267,7 +299,7 @@ local COMMANDS = {
         category = "Knowledge Memory",
         icon = "🧠",
         shortcut = "",
-        keywords = "zettelkasten search notes memory concepts references",
+        keywords = "zettelkasten search notes memory concepts references mission control fleet",
         fn = function()
             searchZettelkasten()
         end
@@ -665,7 +697,7 @@ local PALETTE_HTML = [=[
   <div class="search-container">
     <span class="search-icon">⚡</span>
     <span id="modeBadge" class="mode-badge">Code</span>
-    <input type="text" id="searchInput" class="search-input" placeholder="Type a command, or /code, /chat, /zk..." autofocus>
+    <input type="text" id="searchInput" class="search-input" placeholder="Type a command, or zk, code, chat..." autofocus>
   </div>
 
   <div id="listContainer" class="list-container"></div>
@@ -704,8 +736,7 @@ local PALETTE_HTML = [=[
       if (filtered.length === 0) {
         listContainer.innerHTML = `
           <div class="empty-state">
-            <p>No exact command matches.</p>
-            <p style="font-size:12px; color:#888;">Press <b>Enter</b> to search <b>${escapeHtml(searchInput.value)}</b> in Code Intelligence.</p>
+            <p>No matching commands found.</p>
           </div>
         `;
         return;
@@ -743,15 +774,16 @@ local PALETTE_HTML = [=[
     }
 
     function filterCommands() {
-      const q = searchInput.value.trim().toLowerCase();
+      const raw = searchInput.value.trim();
+      const q = raw.toLowerCase();
       
-      if (!q) {
+      if (!raw) {
         modeBadge.style.display = 'none';
         filtered = [...ALL_COMMANDS];
-      } else if (q.startsWith('/code ') || q.startsWith('/search ')) {
+      } else if (q.startsWith('/code ') || q.startsWith('code ') || q.startsWith('/search ') || q.startsWith('search ')) {
         modeBadge.style.display = 'inline-block';
         modeBadge.textContent = 'Code Intel';
-        const searchQ = q.replace(/^\/(?:code|search)\s+/, '');
+        const searchQ = raw.replace(/^\/?(?:code|search)\s+/i, '');
         filtered = [
           {
             id: "custom_code_search",
@@ -762,10 +794,10 @@ local PALETTE_HTML = [=[
             query: searchQ
           }
         ];
-      } else if (q.startsWith('/chat ')) {
+      } else if (q.startsWith('/chat ') || q.startsWith('chat ') || q.startsWith('/ai ') || q.startsWith('ai ')) {
         modeBadge.style.display = 'inline-block';
         modeBadge.textContent = 'AI Chat';
-        const chatQ = q.replace(/^\/chat\s+/, '');
+        const chatQ = raw.replace(/^\/?(?:chat|ai)\s+/i, '');
         filtered = [
           {
             id: "custom_chat",
@@ -776,28 +808,64 @@ local PALETTE_HTML = [=[
             query: chatQ
           }
         ];
-      } else if (q.startsWith('/zk ') || q.startsWith('/note ')) {
+      } else if (q.startsWith('/zk ') || q.startsWith('zk ') || q.startsWith('/note ') || q.startsWith('note ')) {
         modeBadge.style.display = 'inline-block';
         modeBadge.textContent = 'Zettelkasten';
-        const noteQ = q.replace(/^\/(?:zk|note)\s+/, '');
+        const noteQ = raw.replace(/^\/?(?:zk|note)\s+/i, '');
         filtered = [
           {
             id: "custom_zk",
             title: `Search Memory Notes for "${noteQ}"`,
             category = "Knowledge Memory",
-            icon: "🧠",
+            icon = "🧠",
             shortcut: "↵",
+            query: noteQ
+          },
+          {
+            id: "zk_create_custom",
+            title: `Create New Note: "${noteQ}"`,
+            category = "Knowledge Memory",
+            icon = "📝",
+            shortcut: "",
             query: noteQ
           }
         ];
       } else {
         modeBadge.style.display = 'none';
-        filtered = ALL_COMMANDS.filter(cmd => {
+        const matched = ALL_COMMANDS.filter(cmd => {
           const matchTitle = cmd.title.toLowerCase().includes(q);
           const matchCat = cmd.category.toLowerCase().includes(q);
           const matchKw = cmd.keywords && cmd.keywords.toLowerCase().includes(q);
           return matchTitle || matchCat || matchKw;
         });
+
+        filtered = [
+          ...matched,
+          {
+            id: "custom_zk",
+            title: `Search Memory Notes for "${raw}"`,
+            category: "Knowledge Memory",
+            icon: "🧠",
+            shortcut: "",
+            query: raw
+          },
+          {
+            id: "custom_code_search",
+            title: `Search Codebase for "${raw}"`,
+            category: "Code Intelligence",
+            icon: "🔍",
+            shortcut: "",
+            query: raw
+          },
+          {
+            id: "custom_chat",
+            title: `Ask AI Copilot: "${raw}"`,
+            category: "AI Copilot",
+            icon: "💬",
+            shortcut: "",
+            query: raw
+          }
+        ];
       }
 
       selectedIndex = 0;
@@ -809,7 +877,7 @@ local PALETTE_HTML = [=[
         const cmd = filtered[idx];
         sendToHammerspoon({ action: cmd.id, query: cmd.query || searchInput.value.trim() });
       } else if (searchInput.value.trim()) {
-        sendToHammerspoon({ action: "code_search_query", query: searchInput.value.trim() });
+        sendToHammerspoon({ action: "custom_zk", query: searchInput.value.trim() });
       }
     }
 
@@ -924,8 +992,11 @@ function M.handleAction(actionId, query)
         local chat = require("ai_chatbox")
         chat.toggleChatbox()
         return
-    elseif actionId == "custom_zk" then
+    elseif actionId == "custom_zk" or actionId == "zk_search_notes" then
         searchZettelkasten(query)
+        return
+    elseif actionId == "zk_create_custom" then
+        promptCreateZettelNote(nil, query)
         return
     end
 
