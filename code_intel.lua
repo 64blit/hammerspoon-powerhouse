@@ -557,8 +557,9 @@ local SEARCH_HTML = [=[
     }
 
     function openInEditor(path) {
-      // Send message to Hammerspoon handler via prompt or title change
-      window.location.hash = "open:" + encodeURIComponent(path);
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.codeIntelHandler) {
+        window.webkit.messageHandlers.codeIntelHandler.postMessage("open:" + path);
+      }
     }
 
     function renderResults(rawText) {
