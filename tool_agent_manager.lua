@@ -1,0 +1,27 @@
+-------------------------------------------------
+-- Tool Agent Manager Menubar (commented out)
+-------------------------------------------------
+
+-- local agentMenu = hs.menubar.new()
+-- -- Set the icon or title (You can use an emoji or a small image)
+-- agentMenu:setTitle("🤖")
+-- agentMenu:setTooltip("Tool Agent Manager")
+-- local home = os.getenv("HOME") or ""
+-- local projectPath = home .. "/Documents/_SPACE/64blit/tools/tool-agent-manager"
+-- function restartAgentServer()
+--     local result = hs.execute(projectPath .. "/restart_server.sh")
+--     if result then
+--         hs.alert.show("✅ Agent Server Restarted")
+--     else
+--         hs.alert.show("❌ Failed to Restart Server")
+--     end
+-- end
+-- agentMenu:setMenu(function()
+--     return {
+--         { title = "Tool Agent Manager", disabled = true },
+--         { title = "-" },
+--         { title = "Restart Server", fn = restartAgentServer },
+--         { title = "View Logs", fn = function() hs.execute("open /tmp/tool-agent-manager.log") end },
+--         { title = "Open Project", fn = function() hs.execute("code " .. projectPath) end },
+--     }
+-- end)

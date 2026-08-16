@@ -1,0 +1,36 @@
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+
+# macOS System Files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# Logs & Runtime Caches
+*.log
+/terminal_server/ttyd_server
+/terminal_server/ttyd_log.txt
+/terminal_server/.playwright-mcp/
+/translator_helper/bin/
+/translator_helper/ocr_helper
+/translator_helper/translate_server/node_modules/
+/translator_helper/translate_server/package-lock.json
+
+# Tool caches & Temporary files
+/tmp/
+*.tmp
+*.mp3
+*.wav
+*.gif
+*.mp4
+
+# Antigravity CLI workspace state
+.antigravitycli/
+.claude/
+.gemini/
+.vscode/
+.idea/
