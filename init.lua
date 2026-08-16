@@ -13,6 +13,7 @@ hs.loadSpoon("SpoonInstall")
 require("spoons_setup")         -- ClipboardTool, Caffeine
 require("window_overlay")       -- Picture-in-Picture window overlay (Ctrl+Alt+Cmd+T)
 require("claude_approve")       -- Claude Always Approve toggle (optional)
+require("command_palette")      -- Unified Command Palette (Option + Z)
 
 -------------------------------------------------
 -- 64blit Code Intelligence

@@ -6,7 +6,13 @@ A modular, extensible macOS productivity environment and AI copilot built on [Ha
 
 ## ✨ Features
 
-### 🧠 1. 64blit Code Intelligence
+### ⚡ 1. Unified Command Palette (`⌥Z` / `Option+Z`)
+A sleek, spotlight-style command center for macOS that lets you access every tool, search codebases, query notes, or prompt AI from a single keyboard-driven launcher:
+- **Instant Action Filtering**: Fuzzy search across all custom Spoons, screen tools, terminal, and AI modules.
+- **Slash Commands**: Type `/code <query>` to search code vectors, `/chat <prompt>` to ask the AI assistant, or `/zk <query>` to search Zettelkasten memory notes.
+- **Full Keyboard Control**: `↑`/`↓` to navigate, `Enter` to run, `Esc` to dismiss.
+
+### 🧠 2. 64blit Code Intelligence
 Deep semantic vector search and codebase ingestion powered by BGE-Large embeddings and ChromaDB.
 - **Semantic Code Search HUD (`⌃⌥⌘K`)**: Spotlight-style floating window with instant vector search across all indexed codebases, AI synthesized architecture guidance, and formatted code snippets with syntax highlighting and line numbers.
 - **Search Selection (`⌃⌥⌘S`)**: Instant vector search for highlighted text or error messages anywhere across macOS.
@@ -15,42 +21,42 @@ Deep semantic vector search and codebase ingestion powered by BGE-Large embeddin
 - **Direct Docs Ingestion**: Crawl and vector-index remote API documentation directly into the active vector DB.
 - **Server Lifecycle**: Start, stop, restart, and monitor the local MCP/HTTP FastAPI server (`http://127.0.0.1:9991`) from the menubar.
 
-### 💬 2. Floating AI Chatbox (`⌃⌥⌘A`)
+### 💬 3. Floating AI Chatbox (`⌃⌥⌘A`)
 - Instant multi-model AI assistant (OpenRouter, Gemini, Claude, Groq).
 - Rendered with Markdown formatting, syntax highlighting, and persistent conversation history.
 - Quick shortcut to trigger anywhere without switching desktop workspaces.
 
-### 🪄 3. LLM Text Refiner
+### 🪄 4. LLM Text Refiner
 - Highlight text in any application and refine it in place or in a floating dialog.
 - Built-in prompts for Summarization, Grammar/Tone Correction, Translation, Code Review, and Architecture Analysis.
 
-### 🈳 4. Real-time Screen Translator & Vision OCR
+### 🈳 5. Real-time Screen Translator & Vision OCR
 - Draggable and resizable screen capture region with Apple Vision text recognition.
 - Overlays translations directly over matching OCR bounding boxes.
 - Powered by native Apple Translation CLI and Vision framework.
 
-### 🐚 5. Web Terminal Server & Mobile QR Pairing
+### 🐚 6. Web Terminal Server & Mobile QR Pairing
 - Self-contained web terminal powered by `ttyd`.
 - Generates a QR code and magic link via Tailscale for remote terminal access on iPhone/iPad.
 
-### 🔍 6. Mouse Magnifier & Screen Recorder
+### 🔍 7. Mouse Magnifier & Screen Recorder
 - Zoom magnifier tracking cursor movement with smooth interpolation.
 - High-fps screen recording and GIF exporter powered by `ffmpeg` and `gifski`.
 
-### 🌅 7. Nightshade (Software Redshift Overlay)
+### 🌅 8. Nightshade (Software Redshift Overlay)
 - True software color-tint overlay across all displays that bypasses Apple XDR / Reference Mode display limitations.
 - Automatic scheduled day/night transitions.
 
-### 🔊 8. Text-to-Speech / Read Aloud (`⌃⌥S`)
+### 🔊 9. Text-to-Speech / Read Aloud (`⌃⌥S`)
 - High-fidelity speech generation with automatic volume boost and audio filtering.
 
-### 🖼️ 9. Window Overlay / Picture-in-Picture (`⌃⌥⌘T`)
+### 🖼️ 10. Window Overlay / Picture-in-Picture (`⌃⌥⌘T`)
 - Pin any active window as a floating Picture-in-Picture thumbnail in the corner of your workspace.
 
-### ⌨️ 10. Keystroke Visualizer
+### ⌨️ 11. Keystroke Visualizer
 - On-screen heads-up display displaying real-time modifier keys and shortcuts for tutorials and demos.
 
-### 🧰 11. Unified Menubar Hub
+### 🧰 12. Unified Menubar Hub
 - Consolidates all custom tools under a single dynamic menubar icon (`🧰`), keeping the macOS status bar clean.
 
 ---
@@ -59,6 +65,7 @@ Deep semantic vector search and codebase ingestion powered by BGE-Large embeddin
 
 | Shortcut | Tool | Description |
 | :--- | :--- | :--- |
+| `⌥Z` | **Command Palette** | Open Unified Command Palette & Search Center |
 | `⌃⌥⌘K` | **Code Search HUD** | Open 64blit Code Intelligence Spotlight search |
 | `⌃⌥⌘S` | **Search Selection** | Search highlighted text in Code Intelligence |
 | `⌃⌥⌘I` | **Ingest Codebase** | Prompt folder picker to index a project into vector DB |

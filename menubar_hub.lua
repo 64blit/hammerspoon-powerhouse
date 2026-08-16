@@ -27,7 +27,16 @@ for _, t in ipairs(tools) do
 end
 
 local function buildHubMenu()
-    local items = {}
+    local items = {
+        {
+            title = "⚡ Command Palette  ⌥Z",
+            fn = function()
+                local cp = require("command_palette")
+                cp.toggle()
+            end
+        },
+        { title = "-" },
+    }
     for i, t in ipairs(tools) do
         if t and t.buildMenu then
             if i > 1 then table.insert(items, { title = "-" }) end
