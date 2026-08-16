@@ -959,8 +959,6 @@ function M.toggle()
     paletteWindow:allowGestures(false)
     paletteWindow:allowTextEntry(true)
     paletteWindow:deleteOnClose(true)
-    paletteWindow:shadow(true)
-
     paletteWindow:windowCallback(function(action)
         if action == "closing" then
             paletteWindow = nil
@@ -968,10 +966,16 @@ function M.toggle()
     end)
 
     local commandsJson = getCommandsJson()
-    local html = PALETTE_HTML:gsub("COMMANDS_PLACEHOLDER", commandsJson)
+    local html = PALETTE_HTML:gsub("COMMANDS_PLACEHOLDER", function() return commandsJson end)
     paletteWindow:html(html)
     paletteWindow:show()
-    paletteWindow:hswindow():focus()
+    
+    hs.timer.doAfter(0.1, function()
+        if paletteWindow then
+            local win = paletteWindow:hswindow()
+            if win then win:focus() end
+        end
+    end)
 end
 
 function M.close()
