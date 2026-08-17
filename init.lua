@@ -1,6 +1,10 @@
 -- Hammerspoon Configuration
 -- Each feature is split into its own module file for maintainability.
 
+-- Enable AppleScript and CLI IPC execution
+hs.allowAppleScript(true)
+pcall(function() require("hs.ipc") end)
+
 -- Load environment variables & secrets first
 require("env_loader")
 

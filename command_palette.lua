@@ -816,16 +816,16 @@ local PALETTE_HTML = [=[
           {
             id: "custom_zk",
             title: `Search Memory Notes for "${noteQ}"`,
-            category = "Knowledge Memory",
-            icon = "🧠",
+            category: "Knowledge Memory",
+            icon: "🧠",
             shortcut: "↵",
             query: noteQ
           },
           {
             id: "zk_create_custom",
             title: `Create New Note: "${noteQ}"`,
-            category = "Knowledge Memory",
-            icon = "📝",
+            category: "Knowledge Memory",
+            icon: "📝",
             shortcut: "",
             query: noteQ
           }
