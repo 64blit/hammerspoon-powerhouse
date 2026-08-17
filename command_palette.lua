@@ -242,6 +242,18 @@ local COMMANDS = {
         end
     },
     {
+        id = "code_open_crawls",
+        title = "Open Scraped Markdown Folder",
+        category = "Code Intel",
+        icon = "📁",
+        shortcut = "",
+        keywords = "open crawls folder directory markdown docs scraper distilled documentation",
+        fn = function()
+            local ci = require("code_intel")
+            ci.openCrawlsFolder()
+        end
+    },
+    {
         id = "code_restart_server",
         title = "Restart Code Intelligence Server",
         category = "Code Intel",

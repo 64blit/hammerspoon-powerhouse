@@ -198,9 +198,11 @@ function M.promptIngestFolder()
     end
 end
 
--------------------------------------------------
--- Scrape URL to Markdown & Ingest Docs
--------------------------------------------------
+function M.openCrawlsFolder()
+    hs.fs.mkdir(crawlsDir)
+    hs.task.new("/usr/bin/open", nil, { crawlsDir }):start()
+end
+
 function M.scrapeURL(url, mode)
     -- mode: "markdown" (default) or "ingest"
     if not url or url == "" then return end
@@ -234,12 +236,44 @@ function M.scrapeURL(url, mode)
             _activeTask = false
             M.updateMenubar()
             if exitCode == 0 then
+                -- Find newest generated markdown file
+                local newestFile = nil
+                local newestMtime = 0
+                for f in hs.fs.dir(crawlsDir) do
+                    if f:match("%.md$") then
+                        local full = crawlsDir .. "/" .. f
+                        local attrs = hs.fs.attributes(full)
+                        if attrs and attrs.modification > newestMtime then
+                            newestMtime = attrs.modification
+                            newestFile = full
+                        end
+                    end
+                end
+
+                if newestFile then
+                    hs.pasteboard.setContents(newestFile)
+                else
+                    hs.pasteboard.setContents(crawlsDir)
+                end
+
                 hs.notify.new({
-                    title = "URL to Markdown Complete",
+                    title = "URL Scrape Complete",
                     informativeText = "Saved to " .. crawlsDir
                 }):send()
                 hs.alert.show("✅ Markdown Crawl Complete!", 3)
-                hs.task.new("/usr/bin/open", nil, { crawlsDir }):start()
+
+                local choice = hs.dialog.blockAlert(
+                    "🕸️ Scrape Complete",
+                    string.format("Successfully scraped %s\n\nSaved in: %s\n(Path copied to clipboard)", url, crawlsDir),
+                    "Open Markdown File",
+                    "Open Folder",
+                    "Done"
+                )
+                if choice == "Open Markdown File" and newestFile then
+                    hs.task.new("/usr/bin/open", nil, { newestFile }):start()
+                elseif choice == "Open Folder" or (choice == "Open Markdown File" and not newestFile) then
+                    hs.task.new("/usr/bin/open", nil, { crawlsDir }):start()
+                end
             else
                 hs.alert.show("❌ Crawl Failed (see console)", 4)
                 print("[code_intel] Scrape failed: " .. tostring(err or out))
@@ -714,6 +748,7 @@ function M.buildMenu()
         { title = "📥 Ingest Codebase / Folder...", fn = function() M.promptIngestFolder() end },
         { title = "🕸️ Scrape URL to Markdown...", fn = function() M.promptScrapeURL("markdown") end },
         { title = "📚 Ingest Documentation URL...", fn = function() M.promptScrapeURL("ingest") end },
+        { title = "📁 Open Scraped Markdown Folder...", fn = function() M.openCrawlsFolder() end },
         { title = "-" },
         { title = "🚀 Start Server", fn = M.startServer, disabled = _isOnline },
         { title = "🛑 Stop Server", fn = M.stopServer, disabled = not _isOnline },
