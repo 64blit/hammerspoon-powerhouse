@@ -1,0 +1,44 @@
+-------------------------------------------------
+-- Local / Private Hammerspoon Extensions (Template)
+--
+-- Copy this file to `~/.hammerspoon/local_init.lua` (which is gitignored)
+-- to add private modules, machine-specific hotkeys, or extra Command Palette
+-- commands without creating git conflicts or risking private leaks.
+--
+-- You can also drop private `.lua` files into `~/.hammerspoon/private/`
+-- (also gitignored) and `require()` them from `local_init.lua`.
+-------------------------------------------------
+
+-- Example 1: Load a private module stored in ~/.hammerspoon/private/
+-- local ok, myPrivate = pcall(require, "my_private_tool")
+-- if not ok then print("[local_init] " .. tostring(myPrivate)) end
+
+-- Example 2: Register a private command in the Option+Z Command Palette
+-- local palette = require("command_palette")
+-- palette.registerCommand({
+--     id = "private_deploy",
+--     title = "Open Internal Dashboard",
+--     category = "Private",
+--     icon = "🔒",
+--     keywords = "internal dashboard ops",
+--     fn = function()
+--         hs.urlevent.openURL("https://internal.example.com")
+--     end,
+-- })
+
+-- Example 3: Add a private tool submenu to the unified Menubar Hub
+-- local hub = require("menubar_hub")
+-- hub.registerTool({
+--     title = "My Private Tool",
+--     icon = function() return "🔒" end,
+--     buildMenu = function()
+--         return {
+--             { title = "Run Private Action", fn = function() hs.alert.show("Hello!") end },
+--         }
+--     end,
+-- })
+
+-- Example 4: Machine-specific custom hotkey
+-- hs.hotkey.bind({"ctrl", "alt", "cmd"}, "X", function()
+--     hs.alert.show("Custom local shortcut triggered")
+-- end)

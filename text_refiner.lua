@@ -20,20 +20,31 @@ local function processSelectedText(systemPrompt, loadingMessage, showPopup)
             return
         end
 
+        -- Resolve API provider: xAI (primary) -> OpenRouter -> OpenAI
         local apiKey = env.get("XAI_API_KEY", "")
+        local url = env.get("TEXT_REFINER_URL", "https://api.x.ai/v1/chat/completions")
+        local model = env.get("TEXT_REFINER_MODEL", "grok-4.20-non-reasoning-latest")
+
         if apiKey == "" then
-            apiKey = env.get("OPENAI_API_KEY", "")
+            apiKey = env.get("OPENROUTER_API_KEY", "")
+            if apiKey ~= "" then
+                url = env.get("TEXT_REFINER_URL", "https://openrouter.ai/api/v1/chat/completions")
+                model = env.get("TEXT_REFINER_MODEL", "x-ai/grok-3-mini-beta")
+            end
         end
         if apiKey == "" then
-            hs.alert.show("XAI_API_KEY not found in ~/.hammerspoon/.env or ~/.env", 3)
+            apiKey = env.get("OPENAI_API_KEY", "")
+            if apiKey ~= "" then
+                url = env.get("TEXT_REFINER_URL", "https://api.openai.com/v1/chat/completions")
+                model = env.get("TEXT_REFINER_MODEL", "gpt-4o-mini")
+            end
+        end
+        if apiKey == "" then
+            hs.alert.show("Set XAI_API_KEY, OPENROUTER_API_KEY, or OPENAI_API_KEY in ~/.hammerspoon/.env or ~/.env", 3)
             return
         end
 
         hs.alert.show(loadingMessage)
-        
-        -- API Configuration
-        local url = "https://api.x.ai/v1/chat/completions" -- use xai
-        local model = "grok-4.20-non-reasoning-latest" -- Latest, fastest, cheapest non-reasoning Grok model
 
         -- Prepare the request body
         local body = hs.json.encode({
@@ -234,4 +245,9 @@ return {
     icon = function() return "✨" end,
     buildMenu = buildRefinerMenu,
     menubar = refineMenu,
+    refineCoding = refineCoding,
+    refineChat = refineChat,
+    refineEmail = refineEmail,
+    translateToSpanish = translateToSpanish,
+    translateToEnglish = translateToEnglish,
 }

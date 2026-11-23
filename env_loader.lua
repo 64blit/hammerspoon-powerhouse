@@ -1,8 +1,8 @@
 -------------------------------------------------
 -- Environment & Secrets Loader
 -- Loads configuration and API keys from:
---   1. ~/.hammerspoon/.env
---   2. ~/.env
+--   1. ~/.hammerspoon/.env   (machine-local overrides, gitignored)
+--   2. ~/.env                (global user secrets)
 --   3. System environment variables (os.getenv)
 -------------------------------------------------
 
@@ -10,21 +10,28 @@ local M = {}
 local _envCache = {}
 local _loaded = false
 
+-- Expand a leading "~/" to $HOME/
+function M.expandPath(p)
+    if type(p) ~= "string" then return p end
+    local home = os.getenv("HOME") or ""
+    if p == "~" then return home end
+    if p:sub(1, 2) == "~/" then
+        return home .. p:sub(2)
+    end
+    return p
+end
+
 -- Parse a single .env file into the cache (does not overwrite existing keys)
 local function parseEnvFile(filePath)
     local f = io.open(filePath, "r")
     if not f then return false end
 
     for line in f:lines() do
-        -- Trim leading/trailing whitespace
         local trimmed = line:match("^%s*(.-)%s*$")
-        -- Skip empty lines and comments
         if trimmed ~= "" and not trimmed:match("^#") then
-            -- Match KEY=VALUE (supports optional export KEY=VALUE)
-            local key, val = trimmed:match("^(?:export%s+)?([%w_]+)%s*=%s*(.*)$")
-            if not key then
-                key, val = trimmed:match("^([%w_]+)%s*=%s*(.*)$")
-            end
+            -- Strip optional leading "export "
+            local cleaned = trimmed:gsub("^export%s+", "")
+            local key, val = cleaned:match("^([%w_]+)%s*=%s*(.*)$")
             if key and val then
                 -- Strip surrounding single or double quotes
                 val = val:match('^"(.*)"$') or val:match("^'(.*)'$") or val
@@ -68,6 +75,26 @@ function M.get(key, fallback)
         return sysVal
     end
     return fallback
+end
+
+-- Retrieve a path environment variable with "~" expansion
+function M.getPath(key, fallback)
+    local val = M.get(key, fallback)
+    if val == nil then return nil end
+    return M.expandPath(val)
+end
+
+-- Retrieve a boolean environment variable (1/true/yes/on vs 0/false/no/off)
+function M.getBool(key, default)
+    local raw = M.get(key)
+    if raw == nil then return default == true end
+    local lower = tostring(raw):lower()
+    if lower == "1" or lower == "true" or lower == "yes" or lower == "on" then
+        return true
+    elseif lower == "0" or lower == "false" or lower == "no" or lower == "off" then
+        return false
+    end
+    return default == true
 end
 
 -- Check if a key exists and is non-empty

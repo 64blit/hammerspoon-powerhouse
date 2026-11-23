@@ -1,14 +1,15 @@
 -------------------------------------------------
--- Tool Agent Manager Menubar (commented out)
+-- Tool Agent Manager Menubar (Optional Example Template)
+-- Copy into ~/.hammerspoon/private/ and load from local_init.lua to customize.
 -------------------------------------------------
 
+-- local env = require("env_loader")
 -- local agentMenu = hs.menubar.new()
--- -- Set the icon or title (You can use an emoji or a small image)
 -- agentMenu:setTitle("🤖")
 -- agentMenu:setTooltip("Tool Agent Manager")
--- local home = os.getenv("HOME") or ""
--- local projectPath = home .. "/Documents/_SPACE/64blit/tools/tool-agent-manager"
--- function restartAgentServer()
+-- local projectPath = env.getPath("AGENT_MANAGER_PATH", "~/projects/tool-agent-manager")
+--
+-- local function restartAgentServer()
 --     local result = hs.execute(projectPath .. "/restart_server.sh")
 --     if result then
 --         hs.alert.show("✅ Agent Server Restarted")
@@ -16,6 +17,7 @@
 --         hs.alert.show("❌ Failed to Restart Server")
 --     end
 -- end
+--
 -- agentMenu:setMenu(function()
 --     return {
 --         { title = "Tool Agent Manager", disabled = true },

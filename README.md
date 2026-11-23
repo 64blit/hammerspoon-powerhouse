@@ -1,155 +1,201 @@
-# ⚡ Hammerspoon Powerhouse & 64blit Code Intelligence
+# ⚡ Hammerspoon Powerhouse
 
-A modular, extensible macOS productivity environment and AI copilot built on [Hammerspoon](https://www.hammerspoon.org/). Features semantic vector code search, codebase ingestion, documentation scrapers, floating AI chatboxes, screen translation OCR, picture-in-picture overlays, and unified menubar control.
-
----
-
-## ✨ Features
-
-### ⚡ 1. Unified Command Palette (`⌥Z` / `Option+Z`)
-A sleek, spotlight-style command center for macOS that lets you access every tool, search codebases, query notes, or prompt AI from a single keyboard-driven launcher:
-- **Instant Action Filtering**: Fuzzy search across all custom Spoons, screen tools, terminal, and AI modules.
-- **Slash Commands**: Type `/code <query>` to search code vectors, `/chat <prompt>` to ask the AI assistant, or `/zk <query>` to search Zettelkasten memory notes.
-- **Full Keyboard Control**: `↑`/`↓` to navigate, `Enter` to run, `Esc` to dismiss.
-
-### 🧠 2. 64blit Code Intelligence
-Deep semantic vector search and codebase ingestion powered by BGE-Large embeddings and ChromaDB.
-- **Semantic Code Search HUD (`⌃⌥⌘K`)**: Spotlight-style floating window with instant vector search across all indexed codebases, AI synthesized architecture guidance, and formatted code snippets with syntax highlighting and line numbers.
-- **Search Selection (`⌃⌥⌘S`)**: Instant vector search for highlighted text or error messages anywhere across macOS.
-- **Codebase / Folder Ingestion (`⌃⌥⌘I`)**: Point-and-click folder indexing with custom semantic tags (e.g. `svelte,api,python`).
-- **URL to Markdown Scraper**: Full recursive documentation crawler that outputs clean consolidated & split Markdown files with frontmatter and tables of contents (`~/Documents/Crawls/`).
-- **Direct Docs Ingestion**: Crawl and vector-index remote API documentation directly into the active vector DB.
-- **Server Lifecycle**: Start, stop, restart, and monitor the local MCP/HTTP FastAPI server (`http://127.0.0.1:9991`) from the menubar.
-
-### 💬 3. Floating AI Chatbox (`⌃⌥⌘A`)
-- Instant multi-model AI assistant (OpenRouter, Gemini, Claude, Groq).
-- Rendered with Markdown formatting, syntax highlighting, and persistent conversation history.
-- Quick shortcut to trigger anywhere without switching desktop workspaces.
-
-### 🪄 4. LLM Text Refiner
-- Highlight text in any application and refine it in place or in a floating dialog.
-- Built-in prompts for Summarization, Grammar/Tone Correction, Translation, Code Review, and Architecture Analysis.
-
-### 🈳 5. Real-time Screen Translator & Vision OCR
-- Draggable and resizable screen capture region with Apple Vision text recognition.
-- Overlays translations directly over matching OCR bounding boxes.
-- Powered by native Apple Translation CLI and Vision framework.
-
-### 🐚 6. Web Terminal Server & Mobile QR Pairing
-- Self-contained web terminal powered by `ttyd`.
-- Generates a QR code and magic link via Tailscale for remote terminal access on iPhone/iPad.
-
-### 🔍 7. Mouse Magnifier & Screen Recorder
-- Zoom magnifier tracking cursor movement with smooth interpolation.
-- High-fps screen recording and GIF exporter powered by `ffmpeg` and `gifski`.
-
-### 🌅 8. Nightshade (Software Redshift Overlay)
-- True software color-tint overlay across all displays that bypasses Apple XDR / Reference Mode display limitations.
-- Automatic scheduled day/night transitions.
-
-### 🔊 9. Text-to-Speech / Read Aloud (`⌃⌥S`)
-- High-fidelity speech generation with automatic volume boost and audio filtering.
-
-### 🖼️ 10. Window Overlay / Picture-in-Picture (`⌃⌥⌘T`)
-- Pin any active window as a floating Picture-in-Picture thumbnail in the corner of your workspace.
-
-### ⌨️ 11. Keystroke Visualizer
-- On-screen heads-up display displaying real-time modifier keys and shortcuts for tutorials and demos.
-
-### 🧰 12. Unified Menubar Hub
-- Consolidates all custom tools under a single dynamic menubar icon (`🧰`), keeping the macOS status bar clean.
+A modular, open-source macOS productivity kit and AI copilot built on [Hammerspoon](https://www.hammerspoon.org/). Designed with a clean **public/private separation layer** so you can share, fork, pull, and push updates without ever losing or leaking your API keys, private scripts, or machine-specific paths.
 
 ---
 
-## ⌨️ Global Keybindings
+## ✨ What's Included
 
-| Shortcut | Tool | Description |
-| :--- | :--- | :--- |
-| `⌥Z` | **Command Palette** | Open Unified Command Palette & Search Center |
-| `⌃⌥⌘K` | **Code Search HUD** | Open 64blit Code Intelligence Spotlight search |
-| `⌃⌥⌘S` | **Search Selection** | Search highlighted text in Code Intelligence |
-| `⌃⌥⌘I` | **Ingest Codebase** | Prompt folder picker to index a project into vector DB |
-| `⌃⌥⌘A` | **AI Chatbox** | Toggle floating OpenRouter / LLM chatbox |
-| `⌃⌥⌘T` | **Window PiP** | Toggle Picture-in-Picture overlay for focused window |
-| `⌃⌥S` | **Read Aloud** | Speak selected text aloud |
-| `⌘⌥V` | **Clipboard Tool** | Open clipboard history manager |
-| `⌃⌥⌘C` | **Caffeine** | Prevent system sleep |
+### ⚡ 1. Unified Command Palette (`⌥Z`)
+Spotlight-style keyboard launcher for every tool, workflow, code search, and note:
+- **Fuzzy Command Search**: Filter every installed module, scraper, AI action, and utility instantly.
+- **Slash Commands**:
+  - `/code <query>` — Semantic vector search across indexed codebases
+  - `/zk <query>` — Search local Zettelkasten Markdown notes (`ZETTELKASTEN_NOTES_DIR`)
+  - `/chat` — Launch the floating AI Chatbox
+- **Extensible**: Add private commands from `local_init.lua` via `command_palette.registerCommand(...)`.
 
-*(All hotkeys are customizable in `init.lua`)*
+### 🖼️ 2. Visual Image Scraper & Markdown Doc Crawler
+- **Visual Image Picker**: Enter any URL to extract page images, preview them in a paginated dark-mode WebView gallery, select the ones you want, and batch-download them to `~/Downloads/scraped-images`.
+- **64blit Code Intelligence (Optional Backend)**: Deep semantic vector search HUD (`⌃⌥⌘K`), search highlighted text (`⌃⌥⌘S`), codebase ingestion (`⌃⌥⌘I`), and recursive URL-to-Markdown docset scraping (`~/Documents/Crawls/`).
+
+### 🔍 3. Mouse Magnifier & Hardware Screen Recorder (`⌃⌥⌘M` / `⌃⌥⌘R`)
+- Smooth cursor-following magnifier spanning from **Fit Whole Screen** (`⌃⌥⌘0`) up to **10x** zoom with subtle click-pulse animations.
+- Live hardware-accelerated recording (`ffmpeg` + Apple `h264_videotoolbox`) cropped directly to the magnifier frame, outputting **MP4** plus optional **GIF** (`gifski`) and **WebM** exports.
+
+### 🔊 4. Multi-Engine Read Aloud & Cliffnotes Summarizer (`⌃⌥S` / `⌃⌥⇧S`)
+- **`⌃⌥S` (Read Verbatim)** / **`⌃⌥⇧S` (Summarize to Spoken Cliffnotes & Read)**.
+- **Multi-Engine Support** (switchable live from the menubar or `TTS_ENGINE` in `.env`):
+  1. **Local Kokoro-82M** (fully offline sentence-chunked synthesis when `KOKORO_TTS_DIR` is configured)
+  2. **OpenRouter Cloud TTS** (high-quality speech via `OPENROUTER_API_KEY`)
+  3. **macOS `say`** (zero-config built-in offline fallback — works immediately out of the box)
+
+### 💬 5. Floating AI Chatbox (`⌃⌥⌘A`)
+- Streaming multi-model assistant (OpenRouter — Claude, Gemini, GPT, Grok, DeepSeek, or custom model IDs).
+- Full Markdown rendering, syntax highlighting, one-click code copy buttons, and persistent conversation state.
+
+### ✨ 6. LLM Text Refiner & Dialect Translator (`⌃⌥⌘D/F/G/S/E`)
+- Select text anywhere on macOS to polish speech-to-text dictation in place for **Coding Prompts** (`⌃⌥⌘D`), **Chat/DM** (`⌃⌥⌘F`), or **Email** (`⌃⌥⌘G`), or translate **EN ↔ ES** (`⌃⌥⌘S` / `⌃⌥⌘E`).
+- Automatically routes to `XAI_API_KEY` (x.ai Grok), `OPENROUTER_API_KEY`, or `OPENAI_API_KEY`.
+
+### 🈳 7. Live Screen Translator & Apple Vision OCR (`⌃⌥⌘Y`)
+- Draggable/resizable capture frame with native Apple Vision OCR (`ocr_helper.swift`) and real-time translated text overlays drawn directly over matching bounding boxes.
+- Dual backend: bundled local Node.js Google Translate server + optional Apple Translation CLI fallback.
+
+### 🐚 8. Web Terminal Server & Mobile QR Pairing (`⌘⌥M` / `⌘⌥Q`)
+- One-click web terminal (`ttyd` + mobile virtual keyboard wrapper `ttyd_mobile.html`).
+- Automatic Tailscale HTTPS exposure + scannable on-screen QR code for instant iPhone/iPad access.
+
+### 🛠️ 9. Everyday Utilities & Unified Menubar Hub (`🧰`)
+- **Window Picture-in-Picture** (`⌃⌥⌘T`): Pin any focused window as a live floating thumbnail.
+- **Keystroke Visualizer**: Clean HUD displaying modifier chords & keys for demos and screen recordings.
+- **Nightshade**: Click-through software redshift overlay that works even on Apple XDR / Reference Mode displays.
+- **Official Spoons**: Bundled `ClipboardTool` (`⌘⌥V`) and `Caffeine` (`⌃⌥⌘C`).
+- **Unified Menubar Hub (`🧰`)**: Consolidates all tools under one clean icon and supports `menubar_hub.registerTool(...)` for private modules.
 
 ---
 
-## 🚀 Quickstart & Installation
+## 🚀 Quickstart (2 Minutes)
 
 ### 1. Prerequisites
-- macOS 13+ (Ventura, Sonoma, Sequoia)
+- macOS 13+ (Apple Silicon or Intel)
 - [Hammerspoon](https://www.hammerspoon.org/) (`brew install --cask hammerspoon`)
-- Homebrew (`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`)
+- [Homebrew](https://brew.sh/) (for optional CLI tools like `ffmpeg`, `gifski`, `uv`, `ttyd`)
 
-### 2. Clone Repository
-Clone directly into your Hammerspoon directory:
+### 2. Clone & Run Installer
 ```bash
 git clone https://github.com/64blit/hammerspoon-powerhouse.git ~/.hammerspoon
+cd ~/.hammerspoon
+./install.sh
 ```
 
-### 3. Configure Secrets & Environment
-Copy the example template to `~/.hammerspoon/.env` (or populate `~/.env`):
-```bash
-cp ~/.hammerspoon/.env.example ~/.hammerspoon/.env
-```
-Edit `~/.hammerspoon/.env` and add your API keys:
+`install.sh` is safe and idempotent:
+- Creates `~/.hammerspoon/.env` from `.env.example` (never overwrites existing files)
+- Creates `~/.hammerspoon/local_init.lua` from `local_init.example.lua` (never overwrites existing files)
+- Installs a **git `pre-commit` privacy guard** so you can never accidentally commit secrets or private paths
+- Optionally installs Homebrew dependencies (`ffmpeg`, `gifski`, `uv`, `ttyd`) and builds the OCR/translator helpers
+
+### 3. Add Optional API Keys
+Edit `~/.hammerspoon/.env` (or keep global keys in `~/.env`):
 ```env
-OPENROUTER_API_KEY=your_openrouter_key
-XAI_API_KEY=your_xai_key
-OPENAI_API_KEY=your_openai_key
-GEMINI_API_KEY=your_gemini_key
+OPENROUTER_API_KEY=sk-or-...
+XAI_API_KEY=xai-...
+```
+> **Zero-key start:** Command Palette, Magnifier/Recorder, Window PiP, Keystroke Visualizer, Nightshade, Image Scraper, Clipboard History, Caffeine, and Read Aloud (`macOS say`) all work immediately without any API keys.
+
+### 4. Grant macOS Permissions & Launch
+1. Open **Hammerspoon** and grant **Accessibility** and **Screen Recording** permissions in System Settings.
+2. Press **`⌥Z`** (`Option + Z`) to open the Command Palette, or click **`🧰`** in your menubar!
+
+---
+
+## 🔒 Keeping Private Stuff Safe (Never Lose, Never Leak)
+
+This kit is structured so you can keep `~/.hammerspoon` directly synced with GitHub while keeping private scripts, local paths, and credentials completely isolated:
+
+| Layer | File / Directory | Tracked in Git? | Purpose |
+| :--- | :--- | :---: | :--- |
+| **Secrets & Paths** | `~/.hammerspoon/.env` or `~/.env` | ❌ Gitignored | API keys, local binary/model paths, module `ENABLE_*` flags |
+| **Private Hooks** | `~/.hammerspoon/local_init.lua` | ❌ Gitignored | Machine-specific `require()` calls, custom hotkeys, private startup code |
+| **Private Modules** | `~/.hammerspoon/private/*.lua` | ❌ Gitignored | Private Lua modules (auto-added to `package.path`) |
+| **Local Backups** | `~/.hammerspoon/.local_backups/` | ❌ Gitignored | Personal snapshots and `.bak` files |
+| **Commit Guard** | `scripts/audit_privacy.sh` | ✅ Tracked | Blocks commits containing keys, `/Users/...` paths, `.env`, or external symlinks |
+
+### Extending Privately Without Merge Conflicts
+Copy [`local_init.example.lua`](local_init.example.lua) to `local_init.lua`:
+```lua
+-- Load a private module from ~/.hammerspoon/private/
+require("my_internal_helper")
+
+-- Register a private command in the Option+Z Command Palette
+require("command_palette").registerCommand({
+    id = "my_private_action",
+    title = "Open Internal Dashboard",
+    category = "Private",
+    icon = "🔒",
+    fn = function() hs.urlevent.openURL("https://internal.example.com") end,
+})
+
+-- Add a private submenu to the unified 🧰 Menubar Hub
+require("menubar_hub").registerTool({
+    title = "Internal Tools",
+    icon = function() return "🔒" end,
+    buildMenu = function()
+        return { { title = "Ping", fn = function() hs.alert.show("Pong") end } }
+    end,
+})
 ```
 
-### 4. One-Click Dependency Installation
-1. Start **Hammerspoon**.
-2. Click the **🧰** Menubar Hub icon and select **📦 Install Tools (brew)**.
-3. This automatically installs and verifies:
-   - `ffmpeg` (Audio/video encoding)
-   - `gifski` (GIF export)
-   - `uv` (Fast Python package runner)
-   - `translate-cli` & OCR helpers (Apple Vision & Translation)
+### Run the Privacy Audit Anytime
+```bash
+./scripts/audit_privacy.sh
+```
+The same script is automatically installed as `.git/hooks/pre-commit` when you run `./install.sh`.
 
-### 5. Reload Hammerspoon
-Press `Reload Hammerspoon` in the menu or restart Hammerspoon.
+---
+
+## ⌨️ Default Keybindings
+
+| Shortcut | Module | Action |
+| :--- | :--- | :--- |
+| `⌥Z` | **Command Palette** | Open Unified Command Palette & Search Center |
+| `⌃⌥⌘A` | **AI Chatbox** | Toggle floating multi-model LLM chatbox |
+| `⌃⌥⌘M` | **Mouse Magnifier** | Toggle cursor magnifier |
+| `⌃⌥⌘R` | **Magnifier Recorder** | Start / stop hardware MP4 + GIF screen recording |
+| `⌃⌥⌘=` / `-` / `0` | **Mouse Magnifier** | Zoom in / zoom out / fit whole screen |
+| `⌃⌥S` | **Read Aloud** | Speak selected text aloud (or stop) |
+| `⌃⌥⇧S` | **Cliffnotes TTS** | Summarize selection via LLM and speak aloud |
+| `⌃⌥⌘D` / `F` / `G` | **Text Refiner** | Refine dictation for Coding / Chat / Email |
+| `⌃⌥⌘S` / `E` | **Text Refiner** | Translate selection EN→ES / ES→EN |
+| `⌃⌥⌘Y` / `⇧Y` / `P` | **Screen Translator** | Toggle OCR overlay / translate now / pause |
+| `⌘⌥M` / `U` / `Q` | **Web Terminal** | Toggle `ttyd` server / copy Tailscale link / show QR |
+| `⌃⌥⌘T` | **Window PiP** | Pin focused window as Picture-in-Picture |
+| `⌃⌥⌘K` | **Code Intel / Keystrokes** | Code Search HUD / Keystroke Visualizer toggle |
+| `⌃⌥⌘I` | **Code Intel** | Prompt folder picker to ingest codebase |
+| `⌘⌥V` | **ClipboardTool** | Open clipboard history manager |
+| `⌃⌥⌘C` | **Caffeine** | Toggle display sleep prevention |
+
+*Disable any module cleanly in `~/.hammerspoon/.env` with `ENABLE_<MODULE>=0` (see [`.env.example`](.env.example)).*
 
 ---
 
 ## 📁 Repository Structure
 
-```
+```text
 ~/.hammerspoon/
-├── init.lua                   # Master entrypoint & hotkey orchestrator
-├── menubar_hub.lua            # Unified dropdown hub for all tools
-├── env_loader.lua             # Secure environment & secrets manager
-├── .env.example               # Template configuration file
-├── code_intel.lua             # 64blit Code Intelligence (Search HUD, Ingest, Scraper)
-├── ai_chatbox.lua             # Floating Webview AI Chatbox
-├── text_refiner.lua           # Quick LLM text transforms (xAI/OpenAI)
-├── window_translator.lua      # Apple Vision OCR & Translation overlay
-├── translator_helper/         # Swift OCR helper & Translation server
-├── terminal_toggle.lua        # Web terminal server & Tailscale QR pairing
-├── terminal_server/           # ttyd server scripts and mobile UI
-├── mouse_magnifier.lua        # Smooth mouse zoom & screen recorder
-├── nightshade.lua             # Software redshift screen filter
-├── text_to_speech.lua         # Text-to-Speech audio player
-├── openrouter_tts.py          # Python TTS synthesizer
-├── window_overlay.lua         # Picture-in-Picture window overlay
-├── keystroke_visualizer.lua   # HUD keystroke visualizer
-├── spoons_setup.lua           # Spoons (ClipboardTool, Caffeine)
-├── install_tools.lua          # Automated Homebrew & CLI installer
-├── assets/                    # Static assets & icons
-└── Spoons/                    # Hammerspoon official Spoons
+├── init.lua                   # Master entrypoint, safe module loader & local_init hook
+├── env_loader.lua             # Layered .env loader (~/.hammerspoon/.env -> ~/.env -> OS env)
+├── install.sh                 # Safe, idempotent setup script + pre-commit hook installer
+├── scripts/
+│   └── audit_privacy.sh       # Secret, path & private-file leak scanner
+├── .env.example               # Documented configuration & module toggle template
+├── local_init.example.lua     # Template for private extensions (copy to local_init.lua)
+├── command_palette.lua        # Unified Option+Z Spotlight palette + registerCommand API
+├── menubar_hub.lua            # Unified 🧰 menubar hub + registerTool API
+├── code_intel.lua             # Code Intelligence HUD, doc crawler & visual Image Scraper
+├── ai_chatbox.lua             # Streaming floating AI Chatbox (OpenRouter)
+├── text_refiner.lua           # In-place dictation polisher & translator
+├── text_to_speech.lua         # Multi-engine Read Aloud (Kokoro / OpenRouter / macOS say)
+├── kokoro_speak.py            # Offline sentence-chunked Kokoro-82M synthesizer
+├── openrouter_tts.py          # OpenRouter TTS & Cliffnotes LLM summarizer
+├── mouse_magnifier.lua        # Magnifier + hardware MP4/GIF/WebM recorder
+├── window_translator.lua      # Apple Vision OCR & real-time screen translation overlay
+├── translator_helper/         # Swift Vision OCR helper & Node.js translation server
+├── terminal_toggle.lua        # Web terminal controller & Tailscale QR overlay
+├── terminal_server/           # ttyd launch scripts & mobile virtual keyboard UI
+├── window_overlay.lua         # Floating Picture-in-Picture window mirror
+├── keystroke_visualizer.lua   # On-screen keystroke HUD
+├── nightshade.lua             # Software redshift screen tint overlay
+├── spoons_setup.lua           # ClipboardTool & Caffeine configuration
+├── install_tools.lua          # In-app one-click Homebrew dependency installer
+├── assets/                    # Static icons & cursor assets
+└── Spoons/                    # Bundled official Spoons
 ```
 
 ---
 
 ## 🤝 Contributing & License
 
-Contributions, bug reports, and suggestions are welcome!
+Contributions, bug reports, and module PRs are welcome! Before committing, run `./scripts/audit_privacy.sh` to verify no local paths or credentials are staged.
 
 Released under the [MIT License](LICENSE).

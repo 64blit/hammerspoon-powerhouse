@@ -628,7 +628,7 @@ function M.toggleChatbox()
         end
     end)
 
-    local html = HTML_CONTENT:gsub("API_KEY_PLACEHOLDER", apiKey)
+    local html = HTML_CONTENT:gsub("API_KEY_PLACEHOLDER", function() return apiKey end)
     aiChatboxWindow:html(html)
     aiChatboxWindow:show()
 end

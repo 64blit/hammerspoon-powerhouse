@@ -22,10 +22,25 @@ local function checkTerminalStatus(callback)
     end, { "-z", "-w", "1", "127.0.0.1", "7681" }):start()
 end
 
--- Tool paths (hs.task runs with a minimal PATH, so use absolutes)
-local TAILSCALE_BIN = "/Applications/Tailscale.app/Contents/MacOS/Tailscale"
-local PYTHON3_BIN = "/usr/bin/python3"
-local UV_BIN = os.getenv("HOME") .. "/.local/bin/uv"
+-- Tool paths (hs.task runs with a minimal PATH, so detect across ARM/Intel Homebrew & ~/.local/bin)
+local function detectBin(candidates)
+    for _, p in ipairs(candidates) do
+        if hs.fs.attributes(p) then return p end
+    end
+    return candidates[1]
+end
+
+local TAILSCALE_BIN = detectBin({
+    "/Applications/Tailscale.app/Contents/MacOS/Tailscale",
+    "/opt/homebrew/bin/tailscale",
+    "/usr/local/bin/tailscale",
+})
+local PYTHON3_BIN = detectBin({ "/usr/bin/python3", "/opt/homebrew/bin/python3", "/usr/local/bin/python3" })
+local UV_BIN = detectBin({
+    (os.getenv("HOME") or "") .. "/.local/bin/uv",
+    "/opt/homebrew/bin/uv",
+    "/usr/local/bin/uv",
+})
 local QR_PNG_PATH = "/tmp/tailscale_magic_qr.png"
 
 -- Fetch the Tailscale magic URL, then call cb(url) on success or cb(nil) on failure.

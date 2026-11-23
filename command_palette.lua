@@ -9,8 +9,7 @@ local webview = require("hs.webview")
 local env = require("env_loader")
 
 local paletteWindow = nil
-local home = os.getenv("HOME") or ""
-local ZK_NOTES_DIR = env.get("ZETTELKASTEN_NOTES_DIR", home .. "/Documents/_SPACE/knowledge/notes")
+local ZK_NOTES_DIR = env.getPath("ZETTELKASTEN_NOTES_DIR", "~/Documents/Notes")
 
 -------------------------------------------------
 -- Zettelkasten Helpers
@@ -230,6 +229,18 @@ local COMMANDS = {
         end
     },
     {
+        id = "code_scrape_images",
+        title = "Scrape Images from Website URL",
+        category = "Code Intel",
+        icon = "🖼️",
+        shortcut = "",
+        keywords = "scrape images pictures download website url extract gallery photos",
+        fn = function()
+            local ci = require("code_intel")
+            ci.promptScrapeImages()
+        end
+    },
+    {
         id = "code_ingest_docs",
         title = "Ingest Documentation URL to Vector DB",
         category = "Code Intel",
@@ -311,7 +322,7 @@ local COMMANDS = {
         category = "Knowledge Memory",
         icon = "🧠",
         shortcut = "",
-        keywords = "zettelkasten search notes memory concepts references mission control fleet",
+        keywords = "zettelkasten search notes memory concepts references knowledge",
         fn = function()
             searchZettelkasten()
         end
@@ -343,51 +354,63 @@ local COMMANDS = {
         end
     },
     {
-        id = "refine_summarize",
-        title = "Refine: Summarize Selection",
-        category = "Text Refiner",
-        icon = "📋",
-        shortcut = "",
-        keywords = "refine summarize summary selection text shorten tl;dr",
-        fn = function()
-            local refiner = require("text_refiner")
-            refiner.summarize()
-        end
-    },
-    {
-        id = "refine_grammar",
-        title = "Refine: Fix Grammar & Polish",
-        category = "Text Refiner",
-        icon = "✨",
-        shortcut = "",
-        keywords = "refine fix grammar polish spelling tone improve",
-        fn = function()
-            local refiner = require("text_refiner")
-            refiner.fixGrammar()
-        end
-    },
-    {
-        id = "refine_explain",
-        title = "Refine: Explain Selection",
-        category = "Text Refiner",
-        icon = "🧐",
-        shortcut = "",
-        keywords = "refine explain concept code selection teach clarify",
-        fn = function()
-            local refiner = require("text_refiner")
-            refiner.explain()
-        end
-    },
-    {
-        id = "refine_code_review",
-        title = "Refine: Code Review & Suggestions",
+        id = "refine_coding",
+        title = "Refine Selection: For Coding Prompt",
         category = "Text Refiner",
         icon = "🛠️",
-        shortcut = "",
-        keywords = "refine code review audit bugs optimization refactor",
+        shortcut = "⌃⌥⌘D",
+        keywords = "refine coding prompt dictation clean vibe code",
         fn = function()
             local refiner = require("text_refiner")
-            refiner.codeReview()
+            refiner.refineCoding()
+        end
+    },
+    {
+        id = "refine_chat",
+        title = "Refine Selection: For Chat / DM",
+        category = "Text Refiner",
+        icon = "✨",
+        shortcut = "⌃⌥⌘F",
+        keywords = "refine chat dm message grammar polish spelling tone",
+        fn = function()
+            local refiner = require("text_refiner")
+            refiner.refineChat()
+        end
+    },
+    {
+        id = "refine_email",
+        title = "Refine Selection: Format as Email",
+        category = "Text Refiner",
+        icon = "✉️",
+        shortcut = "⌃⌥⌘G",
+        keywords = "refine email format professional polish write",
+        fn = function()
+            local refiner = require("text_refiner")
+            refiner.refineEmail()
+        end
+    },
+    {
+        id = "refine_translate_es",
+        title = "Translate Selection: English → Spanish",
+        category = "Text Refiner",
+        icon = "🇲🇽",
+        shortcut = "⌃⌥⌘S",
+        keywords = "translate spanish english es es-mx",
+        fn = function()
+            local refiner = require("text_refiner")
+            refiner.translateToSpanish()
+        end
+    },
+    {
+        id = "refine_translate_en",
+        title = "Translate Selection: Spanish → English",
+        category = "Text Refiner",
+        icon = "🇺🇸",
+        shortcut = "⌃⌥⌘E",
+        keywords = "translate english spanish en",
+        fn = function()
+            local refiner = require("text_refiner")
+            refiner.translateToEnglish()
         end
     },
 
@@ -397,7 +420,7 @@ local COMMANDS = {
         title = "Screen Translator & OCR Overlay",
         category = "Vision",
         icon = "🈳",
-        shortcut = "",
+        shortcut = "⌃⌥⌘Y",
         keywords = "screen translator ocr vision translation japanese chinese korean",
         fn = function()
             local tr = require("window_translator")
@@ -411,11 +434,11 @@ local COMMANDS = {
         title = "Web Terminal & Mobile QR Link",
         category = "Terminal",
         icon = "🐚",
-        shortcut = "",
+        shortcut = "⌘⌥M",
         keywords = "terminal ttyd web shell tailscale qr pairing mobile",
         fn = function()
             local tt = require("terminal_toggle")
-            tt.toggleServer()
+            tt.toggle()
         end
     },
     {
@@ -451,6 +474,17 @@ local COMMANDS = {
         keywords = "tts text to speech read aloud speak voice audio",
         fn = function()
             hs.eventtap.keyStroke({"ctrl", "alt"}, "S")
+        end
+    },
+    {
+        id = "summarize_aloud",
+        title = "Summarize Selection Aloud (Cliffnotes TTS)",
+        category = "Audio",
+        icon = "🗒️",
+        shortcut = "⌃⌥⇧S",
+        keywords = "tts summarize summary cliffnotes key ideas skim read aloud speak voice audio",
+        fn = function()
+            hs.eventtap.keyStroke({"ctrl", "alt", "shift"}, "S")
         end
     },
     {
@@ -1022,6 +1056,18 @@ function M.handleAction(actionId, query)
             return
         end
     end
+end
+
+-- Allow local_init.lua or private modules to register extra palette commands
+function M.registerCommand(cmd)
+    if type(cmd) ~= "table" or not cmd.id or not cmd.title then return end
+    for i, existing in ipairs(COMMANDS) do
+        if existing.id == cmd.id then
+            COMMANDS[i] = cmd
+            return
+        end
+    end
+    table.insert(COMMANDS, cmd)
 end
 
 -- Bind Option + Z global hotkey

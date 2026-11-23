@@ -248,12 +248,19 @@ local serverTask       = nil
 
 local function findNodeBin()
     local candidates = {
-        "/usr/local/bin/node",
         "/opt/homebrew/bin/node",
+        "/usr/local/bin/node",
     }
     local home = os.getenv("HOME")
     if home then
-        table.insert(candidates, home .. "/.nvm/versions/node/v22.20.0/bin/node")
+        local nvmDir = home .. "/.nvm/versions/node"
+        if hs.fs.attributes(nvmDir) then
+            for entry in hs.fs.dir(nvmDir) do
+                if entry ~= "." and entry ~= ".." then
+                    table.insert(candidates, nvmDir .. "/" .. entry .. "/bin/node")
+                end
+            end
+        end
     end
     for _, p in ipairs(candidates) do
         if hs.fs.attributes(p) then return p end

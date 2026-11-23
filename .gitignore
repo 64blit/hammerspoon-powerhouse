@@ -1,16 +1,44 @@
-# Environment & Secrets
+# ==============================================================================
+# Environment & Secrets (NEVER commit)
+# ==============================================================================
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
+# ==============================================================================
+# Machine-Local & Private Extensions (NEVER commit)
+# ==============================================================================
+local_init.lua
+*.local.lua
+.privacy-denylist.local
+local/
+private/
+.local_backups/
+
+# ==============================================================================
+# Backups & Editor Artifacts
+# ==============================================================================
+*.bak
+*.bak-*
+*.orig
+*.swp
+*~
+__pycache__/
+*.pyc
+*.pyo
+
+# ==============================================================================
 # macOS System Files
+# ==============================================================================
 .DS_Store
 .AppleDouble
 .LSOverride
 Icon
 ._*
 
-# Logs & Runtime Caches
+# ==============================================================================
+# Logs, Compiled Binaries & Runtime Caches
+# ==============================================================================
 *.log
 /terminal_server/ttyd_server
 /terminal_server/ttyd_log.txt
@@ -20,15 +48,16 @@ Icon
 /translator_helper/translate_server/node_modules/
 /translator_helper/translate_server/package-lock.json
 
-# Tool caches & Temporary files
+# Tool caches & Temporary media
 /tmp/
 *.tmp
 *.mp3
 *.wav
 *.gif
 *.mp4
+*.webm
 
-# Antigravity CLI workspace state
+# IDE & Agent Workspace State
 .antigravitycli/
 .claude/
 .gemini/

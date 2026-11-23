@@ -178,4 +178,5 @@ return {
     icon = function() return keyVisTap and "⌨️" or "⌨" end,
     buildMenu = buildKeyVisMenu,
     menubar = keyVisMenu,
+    toggle = toggleKeystrokeVisualizer,
 }
