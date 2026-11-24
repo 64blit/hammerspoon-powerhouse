@@ -1,54 +1,50 @@
 # ⚡ Hammerspoon Powerhouse
 
-A modular, open-source macOS productivity kit and AI copilot built on [Hammerspoon](https://www.hammerspoon.org/). Designed with a clean **public/private separation layer** so you can share, fork, pull, and push updates without ever losing or leaking your API keys, private scripts, or machine-specific paths.
+A modular, open-source macOS productivity kit and AI copilot built on [Hammerspoon](https://www.hammerspoon.org/). Every module is self-contained with zero private backend requirements, and the repo uses a clean **public/private separation layer** so you can fork, customize, pull, and push updates without ever losing or leaking API keys, private scripts, or machine-specific paths.
 
 ---
 
 ## ✨ What's Included
 
 ### ⚡ 1. Unified Command Palette (`⌥Z`)
-Spotlight-style keyboard launcher for every tool, workflow, code search, and note:
-- **Fuzzy Command Search**: Filter every installed module, scraper, AI action, and utility instantly.
-- **Slash Commands**:
-  - `/code <query>` — Semantic vector search across indexed codebases
-  - `/zk <query>` — Search local Zettelkasten Markdown notes (`ZETTELKASTEN_NOTES_DIR`)
-  - `/chat` — Launch the floating AI Chatbox
+Spotlight-style keyboard launcher for every tool, AI transform, and shortcut:
+- **Fuzzy Search**: Instantly filter and run any installed module or utility.
+- **Quick AI Trigger**: Type `/chat` (or anything unmatched) to jump straight into the floating AI Chatbox.
 - **Extensible**: Add private commands from `local_init.lua` via `command_palette.registerCommand(...)`.
 
-### 🖼️ 2. Visual Image Scraper & Markdown Doc Crawler
-- **Visual Image Picker**: Enter any URL to extract page images, preview them in a paginated dark-mode WebView gallery, select the ones you want, and batch-download them to `~/Downloads/scraped-images`.
-- **64blit Code Intelligence (Optional Backend)**: Deep semantic vector search HUD (`⌃⌥⌘K`), search highlighted text (`⌃⌥⌘S`), codebase ingestion (`⌃⌥⌘I`), and recursive URL-to-Markdown docset scraping (`~/Documents/Crawls/`).
-
-### 🔍 3. Mouse Magnifier & Hardware Screen Recorder (`⌃⌥⌘M` / `⌃⌥⌘R`)
-- Smooth cursor-following magnifier spanning from **Fit Whole Screen** (`⌃⌥⌘0`) up to **10x** zoom with subtle click-pulse animations.
+### 🔍 2. Mouse Magnifier & Hardware Screen Recorder (`⌃⌥⌘M` / `⌃⌥⌘R`)
+- Smooth cursor-following magnifier spanning from **Fit Whole Screen** (`⌃⌥⌘0`) up to **10x** zoom with click-pulse ring animations.
 - Live hardware-accelerated recording (`ffmpeg` + Apple `h264_videotoolbox`) cropped directly to the magnifier frame, outputting **MP4** plus optional **GIF** (`gifski`) and **WebM** exports.
 
-### 🔊 4. Multi-Engine Read Aloud & Cliffnotes Summarizer (`⌃⌥S` / `⌃⌥⇧S`)
+### 🔊 3. Multi-Engine Read Aloud & Cliffnotes Summarizer (`⌃⌥S` / `⌃⌥⇧S`)
 - **`⌃⌥S` (Read Verbatim)** / **`⌃⌥⇧S` (Summarize to Spoken Cliffnotes & Read)**.
 - **Multi-Engine Support** (switchable live from the menubar or `TTS_ENGINE` in `.env`):
   1. **Local Kokoro-82M** (fully offline sentence-chunked synthesis when `KOKORO_TTS_DIR` is configured)
   2. **OpenRouter Cloud TTS** (high-quality speech via `OPENROUTER_API_KEY`)
   3. **macOS `say`** (zero-config built-in offline fallback — works immediately out of the box)
 
-### 💬 5. Floating AI Chatbox (`⌃⌥⌘A`)
-- Streaming multi-model assistant (OpenRouter — Claude, Gemini, GPT, Grok, DeepSeek, or custom model IDs).
-- Full Markdown rendering, syntax highlighting, one-click code copy buttons, and persistent conversation state.
+### 🈳 4. Live Screen Translator & Apple Vision OCR (`⌃⌥⌘Y`)
+- Draggable/resizable capture region with native Apple Vision OCR (`ocr_helper.swift`) and real-time translated text overlays drawn directly over matching bounding boxes.
+- Dual backend: bundled local Node.js Google Translate server + optional Apple Translation CLI fallback.
 
-### ✨ 6. LLM Text Refiner & Dialect Translator (`⌃⌥⌘D/F/G/S/E`)
-- Select text anywhere on macOS to polish speech-to-text dictation in place for **Coding Prompts** (`⌃⌥⌘D`), **Chat/DM** (`⌃⌥⌘F`), or **Email** (`⌃⌥⌘G`), or translate **EN ↔ ES** (`⌃⌥⌘S` / `⌃⌥⌘E`).
+### 💬 5. Floating AI Chatbox (`⌃⌥⌘A`)
+- Streaming multi-model assistant via OpenRouter (Claude, Gemini, GPT, Grok, DeepSeek, or custom model IDs).
+- Full Markdown rendering, syntax highlighting, one-click code copy buttons, and persistent conversation history.
+
+### ✨ 6. LLM Text Refiner & Inline Translator (`⌃⌥⌘D/F/G/S/E`)
+- Select text anywhere on macOS to clean raw speech-to-text dictation in place for **Coding Prompts** (`⌃⌥⌘D`), **Chat/DM** (`⌃⌥⌘F`), or **Email** (`⌃⌥⌘G`), or translate **EN ↔ ES** (`⌃⌥⌘S` / `⌃⌥⌘E`).
 - Automatically routes to `XAI_API_KEY` (x.ai Grok), `OPENROUTER_API_KEY`, or `OPENAI_API_KEY`.
 
-### 🈳 7. Live Screen Translator & Apple Vision OCR (`⌃⌥⌘Y`)
-- Draggable/resizable capture frame with native Apple Vision OCR (`ocr_helper.swift`) and real-time translated text overlays drawn directly over matching bounding boxes.
-- Dual backend: bundled local Node.js Google Translate server + optional Apple Translation CLI fallback.
+### 🖼️ 7. Visual Image Scraper
+- Enter any webpage URL to extract images, preview and pick them in a paginated dark-mode WebView gallery, and batch-download selected files into `~/Downloads/scraped-images`.
 
 ### 🐚 8. Web Terminal Server & Mobile QR Pairing (`⌘⌥M` / `⌘⌥Q`)
 - One-click web terminal (`ttyd` + mobile virtual keyboard wrapper `ttyd_mobile.html`).
-- Automatic Tailscale HTTPS exposure + scannable on-screen QR code for instant iPhone/iPad access.
+- Automatic Tailscale HTTPS exposure + scannable on-screen QR code for instant iPhone/iPad terminal access.
 
 ### 🛠️ 9. Everyday Utilities & Unified Menubar Hub (`🧰`)
 - **Window Picture-in-Picture** (`⌃⌥⌘T`): Pin any focused window as a live floating thumbnail.
-- **Keystroke Visualizer**: Clean HUD displaying modifier chords & keys for demos and screen recordings.
+- **Keystroke Visualizer** (`⌃⌥⌘K`): Clean on-screen HUD showing modifier chords & keys for demos and screen recordings.
 - **Nightshade**: Click-through software redshift overlay that works even on Apple XDR / Reference Mode displays.
 - **Official Spoons**: Bundled `ClipboardTool` (`⌘⌥V`) and `Caffeine` (`⌃⌥⌘C`).
 - **Unified Menubar Hub (`🧰`)**: Consolidates all tools under one clean icon and supports `menubar_hub.registerTool(...)` for private modules.
@@ -81,7 +77,7 @@ Edit `~/.hammerspoon/.env` (or keep global keys in `~/.env`):
 OPENROUTER_API_KEY=sk-or-...
 XAI_API_KEY=xai-...
 ```
-> **Zero-key start:** Command Palette, Magnifier/Recorder, Window PiP, Keystroke Visualizer, Nightshade, Image Scraper, Clipboard History, Caffeine, and Read Aloud (`macOS say`) all work immediately without any API keys.
+> **Zero-key start:** Command Palette, Magnifier/Recorder, Visual Image Scraper, Window PiP, Keystroke Visualizer, Nightshade, Clipboard History, Caffeine, and Read Aloud (`macOS say`) all work immediately without any API keys.
 
 ### 4. Grant macOS Permissions & Launch
 1. Open **Hammerspoon** and grant **Accessibility** and **Screen Recording** permissions in System Settings.
@@ -138,7 +134,7 @@ The same script is automatically installed as `.git/hooks/pre-commit` when you r
 
 | Shortcut | Module | Action |
 | :--- | :--- | :--- |
-| `⌥Z` | **Command Palette** | Open Unified Command Palette & Search Center |
+| `⌥Z` | **Command Palette** | Open Unified Command Palette |
 | `⌃⌥⌘A` | **AI Chatbox** | Toggle floating multi-model LLM chatbox |
 | `⌃⌥⌘M` | **Mouse Magnifier** | Toggle cursor magnifier |
 | `⌃⌥⌘R` | **Magnifier Recorder** | Start / stop hardware MP4 + GIF screen recording |
@@ -150,8 +146,7 @@ The same script is automatically installed as `.git/hooks/pre-commit` when you r
 | `⌃⌥⌘Y` / `⇧Y` / `P` | **Screen Translator** | Toggle OCR overlay / translate now / pause |
 | `⌘⌥M` / `U` / `Q` | **Web Terminal** | Toggle `ttyd` server / copy Tailscale link / show QR |
 | `⌃⌥⌘T` | **Window PiP** | Pin focused window as Picture-in-Picture |
-| `⌃⌥⌘K` | **Code Intel / Keystrokes** | Code Search HUD / Keystroke Visualizer toggle |
-| `⌃⌥⌘I` | **Code Intel** | Prompt folder picker to ingest codebase |
+| `⌃⌥⌘K` | **Keystroke Visualizer** | Toggle on-screen keystroke HUD |
 | `⌘⌥V` | **ClipboardTool** | Open clipboard history manager |
 | `⌃⌥⌘C` | **Caffeine** | Toggle display sleep prevention |
 
@@ -172,7 +167,7 @@ The same script is automatically installed as `.git/hooks/pre-commit` when you r
 ├── local_init.example.lua     # Template for private extensions (copy to local_init.lua)
 ├── command_palette.lua        # Unified Option+Z Spotlight palette + registerCommand API
 ├── menubar_hub.lua            # Unified 🧰 menubar hub + registerTool API
-├── code_intel.lua             # Code Intelligence HUD, doc crawler & visual Image Scraper
+├── image_scraper.lua          # Visual webpage image extractor & batch downloader
 ├── ai_chatbox.lua             # Streaming floating AI Chatbox (OpenRouter)
 ├── text_refiner.lua           # In-place dictation polisher & translator
 ├── text_to_speech.lua         # Multi-engine Read Aloud (Kokoro / OpenRouter / macOS say)

@@ -46,24 +46,8 @@ if env.getBool("ENABLE_WINDOW_OVERLAY", true) then
     safeLoad("window_overlay")           -- Picture-in-Picture overlay (⌃⌥⌘T)
 end
 
-if env.getBool("ENABLE_CLAUDE_APPROVE", false) then
-    safeLoad("claude_approve")           -- Optional Claude Always Approve toggle
-end
-
 if env.getBool("ENABLE_COMMAND_PALETTE", true) then
     safeLoad("command_palette")          -- Unified Command Palette (⌥Z)
-end
-
--------------------------------------------------
--- Code Intelligence & Web / Image Scraper
--------------------------------------------------
-if env.getBool("ENABLE_CODE_INTEL", true) then
-    local code_intel = safeLoad("code_intel")
-    if code_intel then
-        hs.hotkey.bind({"ctrl", "alt", "cmd"}, "K", function() code_intel.toggleSearchHUD() end)
-        hs.hotkey.bind({"ctrl", "alt", "cmd"}, "S", function() code_intel.searchSelection() end)
-        hs.hotkey.bind({"ctrl", "alt", "cmd"}, "I", function() code_intel.promptIngestFolder() end)
-    end
 end
 
 -------------------------------------------------

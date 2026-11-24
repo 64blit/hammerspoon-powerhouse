@@ -12,7 +12,7 @@ local installTools = require("install_tools")
 -- Each module returns:
 --   { title, icon (fn -> string), buildMenu (fn -> table), menubar (hs.menubar) }
 local TOOL_SPECS = {
-    { name = "code_intel",           flag = "ENABLE_CODE_INTEL" },
+    { name = "image_scraper",        flag = "ENABLE_IMAGE_SCRAPER" },
     { name = "terminal_toggle",      flag = "ENABLE_TERMINAL_SERVER" },
     { name = "mouse_magnifier",      flag = "ENABLE_MAGNIFIER" },
     { name = "window_translator",    flag = "ENABLE_TRANSLATOR" },

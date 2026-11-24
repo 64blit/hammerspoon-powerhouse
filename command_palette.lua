@@ -1,345 +1,15 @@
 -------------------------------------------------
 -- Unified Command Palette (Option + Z)
--- Spotlight-style HUD for all Hammerspoon actions,
--- Code Intelligence, AI tools, Zettelkasten memory, and shortcuts.
+-- Spotlight-style HUD for all Hammerspoon tools, AI actions, and shortcuts.
 -------------------------------------------------
 
 local M = {}
 local webview = require("hs.webview")
-local env = require("env_loader")
 
 local paletteWindow = nil
-local ZK_NOTES_DIR = env.getPath("ZETTELKASTEN_NOTES_DIR", "~/Documents/Notes")
 
--------------------------------------------------
--- Zettelkasten Helpers
--------------------------------------------------
-local function generateZkId()
-    local now = os.date("%Y%m%dT%H%M%S")
-    local ms = math.floor((hs.timer.absoluteTime() / 1000000) % 1000000)
-    return string.format("%s%06d000", now, ms)
-end
-
-local function createZettelNote(title, content, tags, noteType)
-    if not title or title == "" then return false end
-    noteType = noteType or "permanent"
-    content = content or ""
-    tags = tags or {}
-
-    hs.fs.mkdir(ZK_NOTES_DIR)
-    local noteId = generateZkId()
-    local filePath = string.format("%s/%s.md", ZK_NOTES_DIR, noteId)
-    local nowIso = os.date("!%Y-%m-%dT%H:%M:%S.000000")
-
-    local tagsYaml = ""
-    if type(tags) == "table" and #tags > 0 then
-        for _, t in ipairs(tags) do
-            local cleanTag = tostring(t):gsub("^%s*(.-)%s*$", "%1")
-            if cleanTag ~= "" then
-                tagsYaml = tagsYaml .. string.format("\n- %s", cleanTag)
-            end
-        end
-    elseif type(tags) == "string" and tags ~= "" then
-        for t in tags:gmatch("[^,]+") do
-            local cleanTag = t:gsub("^%s*(.-)%s*$", "%1")
-            if cleanTag ~= "" then
-                tagsYaml = tagsYaml .. string.format("\n- %s", cleanTag)
-            end
-        end
-    end
-    if tagsYaml == "" then
-        tagsYaml = "\n- general"
-    end
-
-    local fileContent = string.format([[---
-created: '%s'
-id: %s
-tags:%s
-title: %s
-type: %s
-updated: '%s'
----
-
-# %s
-
-%s
-]], nowIso, noteId, tagsYaml, title, noteType, nowIso, title, content)
-
-    local f = io.open(filePath, "w")
-    if f then
-        f:write(fileContent)
-        f:close()
-        hs.notify.new({
-            title = "Zettel Note Created",
-            informativeText = string.format("Saved: %s", title)
-        }):send()
-        hs.alert.show("🧠 Zettel Note Saved!", 2)
-        hs.task.new("/usr/bin/open", nil, { filePath }):start()
-        return true, filePath
-    else
-        hs.alert.show("❌ Failed to write Zettel note", 3)
-        return false, nil
-    end
-end
-
-local function promptCreateZettelNote(initialContent, initialTitle)
-    local btn1, title = hs.dialog.textPrompt("New Zettelkasten Note", "Enter Note Title:", initialTitle or "", "Next", "Cancel")
-    if btn1 ~= "Next" or not title or title == "" then return end
-
-    local btn2, tags = hs.dialog.textPrompt("Note Tags", "Enter comma-separated tags (e.g. architecture, fleet, api):", "", "Next", "Cancel")
-    if btn2 ~= "Next" then return end
-
-    if initialContent and initialContent ~= "" then
-        createZettelNote(title, initialContent, tags, "permanent")
-    else
-        local btn3, content = hs.dialog.textPrompt("Note Content", "Enter Note Body / Concept:", "", "Save Note", "Cancel")
-        if btn3 == "Save Note" then
-            createZettelNote(title, content, tags, "permanent")
-        end
-    end
-end
-
-local function searchZettelkasten(rawQuery)
-    if not hs.fs.attributes(ZK_NOTES_DIR) then
-        hs.alert.show("Notes directory not found: " .. ZK_NOTES_DIR, 3)
-        return
-    end
-
-    local query = (rawQuery or ""):gsub("^%s*(.-)%s*$", "%1")
-    query = query:gsub("^/?zk%s*", ""):gsub("^/?note%s*", "")
-
-    if query == "" then
-        local btn, q = hs.dialog.textPrompt("Search Zettelkasten Memory", "Enter search term (title, tag, or content):", "", "Search", "Cancel")
-        if btn == "Search" and q and q ~= "" then
-            query = q
-        else
-            hs.task.new("/usr/bin/open", nil, { ZK_NOTES_DIR }):start()
-            return
-        end
-    end
-
-    local matches = {}
-    for file in hs.fs.dir(ZK_NOTES_DIR) do
-        if file:match("%.md$") then
-            local fullPath = ZK_NOTES_DIR .. "/" .. file
-            local f = io.open(fullPath, "r")
-            if f then
-                local content = f:read("*a")
-                f:close()
-                local title = content:match("title:%s*([^\n]+)") or file
-                local tags = content:match("tags:(.-)title:") or ""
-                
-                local queryLower = query:lower()
-                if title:lower():find(queryLower, 1, true) or tags:lower():find(queryLower, 1, true) or content:lower():find(queryLower, 1, true) then
-                    table.insert(matches, {
-                        path = fullPath,
-                        file = file,
-                        title = title:gsub("^['\"]", ""):gsub("['\"]$", ""),
-                        content = content
-                    })
-                end
-            end
-        end
-    end
-
-    if #matches == 1 then
-        local note = matches[1]
-        hs.alert.show(string.format("🧠 Opened: %s", note.title), 2)
-        hs.task.new("/usr/bin/open", nil, { note.path }):start()
-    elseif #matches > 1 then
-        local summary = ""
-        for i, m in ipairs(matches) do
-            summary = summary .. string.format("%d. %s\n", i, m.title)
-        end
-        local choice = hs.dialog.blockAlert(
-            string.format("🧠 Found %d Matching Notes for %q", #matches, query),
-            summary,
-            "Open Notes Folder",
-            "Close"
-        )
-        if choice == "Open Notes Folder" then
-            hs.task.new("/usr/bin/open", nil, { ZK_NOTES_DIR }):start()
-        end
-    else
-        local choice = hs.dialog.blockAlert(
-            "Zettelkasten Search",
-            string.format("No notes found matching %q in %s.", query, ZK_NOTES_DIR),
-            "Create Note with this Title",
-            "Open Folder"
-        )
-        if choice == "Create Note with this Title" then
-            promptCreateZettelNote(nil, query)
-        elseif choice == "Open Folder" then
-            hs.task.new("/usr/bin/open", nil, { ZK_NOTES_DIR }):start()
-        end
-    end
-end
-
--------------------------------------------------
--- Available Commands Registry
--------------------------------------------------
+-- All available actions in the Command Palette
 local COMMANDS = {
-    -- Code Intelligence
-    {
-        id = "code_search",
-        title = "Semantic Code Search (HUD)",
-        category = "Code Intel",
-        icon = "🔍",
-        shortcut = "⌃⌥⌘K",
-        keywords = "search code intel semantic bge vector chromadb pattern query",
-        fn = function()
-            local ci = require("code_intel")
-            ci.toggleSearchHUD()
-        end
-    },
-    {
-        id = "code_search_selection",
-        title = "Search Selected Code / Error",
-        category = "Code Intel",
-        icon = "🔎",
-        shortcut = "⌃⌥⌘S",
-        keywords = "search selection error highlighted code pattern",
-        fn = function()
-            local ci = require("code_intel")
-            ci.searchSelection()
-        end
-    },
-    {
-        id = "code_ingest_folder",
-        title = "Ingest Codebase / Folder",
-        category = "Code Intel",
-        icon = "📥",
-        shortcut = "⌃⌥⌘I",
-        keywords = "ingest scan folder codebase index tags vector repository",
-        fn = function()
-            local ci = require("code_intel")
-            ci.promptIngestFolder()
-        end
-    },
-    {
-        id = "code_scrape_md",
-        title = "Scrape Website URL to Markdown",
-        category = "Code Intel",
-        icon = "🕸️",
-        shortcut = "",
-        keywords = "scrape crawl website url markdown docset distill",
-        fn = function()
-            local ci = require("code_intel")
-            ci.promptScrapeURL("markdown")
-        end
-    },
-    {
-        id = "code_scrape_images",
-        title = "Scrape Images from Website URL",
-        category = "Code Intel",
-        icon = "🖼️",
-        shortcut = "",
-        keywords = "scrape images pictures download website url extract gallery photos",
-        fn = function()
-            local ci = require("code_intel")
-            ci.promptScrapeImages()
-        end
-    },
-    {
-        id = "code_ingest_docs",
-        title = "Ingest Documentation URL to Vector DB",
-        category = "Code Intel",
-        icon = "📚",
-        shortcut = "",
-        keywords = "ingest docs documentation url crawl index vector",
-        fn = function()
-            local ci = require("code_intel")
-            ci.promptScrapeURL("ingest")
-        end
-    },
-    {
-        id = "code_open_crawls",
-        title = "Open Scraped Markdown Folder",
-        category = "Code Intel",
-        icon = "📁",
-        shortcut = "",
-        keywords = "open crawls folder directory markdown docs scraper distilled documentation",
-        fn = function()
-            local ci = require("code_intel")
-            ci.openCrawlsFolder()
-        end
-    },
-    {
-        id = "code_restart_server",
-        title = "Restart Code Intelligence Server",
-        category = "Code Intel",
-        icon = "🔄",
-        shortcut = "",
-        keywords = "restart server code intel mcp fast api",
-        fn = function()
-            local ci = require("code_intel")
-            ci.restartServer()
-        end
-    },
-    {
-        id = "code_view_logs",
-        title = "View Code Intelligence Server Logs",
-        category = "Code Intel",
-        icon = "📜",
-        shortcut = "",
-        keywords = "logs server tail code intel",
-        fn = function()
-            local ci = require("code_intel")
-            ci.openLogs()
-        end
-    },
-
-    -- Zettelkasten Knowledge Memory
-    {
-        id = "zk_capture_note",
-        title = "Capture New Zettelkasten Note",
-        category = "Knowledge Memory",
-        icon = "📝",
-        shortcut = "",
-        keywords = "zettelkasten new note capture memory permanent second brain",
-        fn = function()
-            promptCreateZettelNote()
-        end
-    },
-    {
-        id = "zk_capture_selection",
-        title = "Capture Selection as Zettel Note",
-        category = "Knowledge Memory",
-        icon = "💡",
-        shortcut = "",
-        keywords = "zettelkasten capture selection note memory save",
-        fn = function()
-            hs.eventtap.keyStroke({"cmd"}, "c")
-            hs.timer.doAfter(0.2, function()
-                local text = hs.pasteboard.getContents()
-                promptCreateZettelNote(text)
-            end)
-        end
-    },
-    {
-        id = "zk_search_notes",
-        title = "Search Zettelkasten Memory (/zk)",
-        category = "Knowledge Memory",
-        icon = "🧠",
-        shortcut = "",
-        keywords = "zettelkasten search notes memory concepts references knowledge",
-        fn = function()
-            searchZettelkasten()
-        end
-    },
-    {
-        id = "zk_open_folder",
-        title = "Open Zettelkasten Notes Folder",
-        category = "Knowledge Memory",
-        icon = "📁",
-        shortcut = "",
-        keywords = "zettelkasten folder directory finder open obsidian",
-        fn = function()
-            hs.fs.mkdir(ZK_NOTES_DIR)
-            hs.task.new("/usr/bin/open", nil, { ZK_NOTES_DIR }):start()
-        end
-    },
-
     -- AI Copilot & Transforms
     {
         id = "ai_chat",
@@ -414,64 +84,14 @@ local COMMANDS = {
         end
     },
 
-    -- Screen & OCR
-    {
-        id = "screen_translator",
-        title = "Screen Translator & OCR Overlay",
-        category = "Vision",
-        icon = "🈳",
-        shortcut = "⌃⌥⌘Y",
-        keywords = "screen translator ocr vision translation japanese chinese korean",
-        fn = function()
-            local tr = require("window_translator")
-            tr.toggle()
-        end
-    },
-
-    -- Terminal & Utilities
-    {
-        id = "terminal_toggle",
-        title = "Web Terminal & Mobile QR Link",
-        category = "Terminal",
-        icon = "🐚",
-        shortcut = "⌘⌥M",
-        keywords = "terminal ttyd web shell tailscale qr pairing mobile",
-        fn = function()
-            local tt = require("terminal_toggle")
-            tt.toggle()
-        end
-    },
-    {
-        id = "mouse_magnifier",
-        title = "Mouse Magnifier & Screen Recorder",
-        category = "Tools",
-        icon = "🔍",
-        shortcut = "",
-        keywords = "mouse magnifier zoom recording gif screen capture",
-        fn = function()
-            local mm = require("mouse_magnifier")
-            mm.toggle()
-        end
-    },
-    {
-        id = "nightshade_toggle",
-        title = "Nightshade: Toggle Screen Redshift",
-        category = "Display",
-        icon = "🌅",
-        shortcut = "",
-        keywords = "nightshade redshift flux orange warm screen overlay display",
-        fn = function()
-            local ns = require("nightshade")
-            ns.toggle()
-        end
-    },
+    -- Audio / Read Aloud
     {
         id = "read_aloud",
         title = "Read Aloud Selection (TTS)",
         category = "Audio",
         icon = "🔊",
         shortcut = "⌃⌥S",
-        keywords = "tts text to speech read aloud speak voice audio",
+        keywords = "tts text to speech read aloud speak voice audio kokoro",
         fn = function()
             hs.eventtap.keyStroke({"ctrl", "alt"}, "S")
         end
@@ -485,6 +105,70 @@ local COMMANDS = {
         keywords = "tts summarize summary cliffnotes key ideas skim read aloud speak voice audio",
         fn = function()
             hs.eventtap.keyStroke({"ctrl", "alt", "shift"}, "S")
+        end
+    },
+
+    -- Screen, Vision & Capture
+    {
+        id = "mouse_magnifier",
+        title = "Mouse Magnifier & Screen Recorder",
+        category = "Capture",
+        icon = "🔍",
+        shortcut = "⌃⌥⌘M",
+        keywords = "mouse magnifier zoom recording gif mp4 webm screen capture",
+        fn = function()
+            local mm = require("mouse_magnifier")
+            mm.toggle()
+        end
+    },
+    {
+        id = "screen_translator",
+        title = "Screen Translator & OCR Overlay",
+        category = "Vision",
+        icon = "🈳",
+        shortcut = "⌃⌥⌘Y",
+        keywords = "screen translator ocr vision translation japanese chinese korean",
+        fn = function()
+            local tr = require("window_translator")
+            tr.toggle()
+        end
+    },
+    {
+        id = "scrape_images",
+        title = "Scrape Images from Website URL",
+        category = "Capture",
+        icon = "🖼️",
+        shortcut = "",
+        keywords = "scrape images pictures download website url extract gallery photos",
+        fn = function()
+            local scraper = require("image_scraper")
+            scraper.promptScrapeImages()
+        end
+    },
+    {
+        id = "open_scraped_images",
+        title = "Open Scraped Images Folder",
+        category = "Capture",
+        icon = "📁",
+        shortcut = "",
+        keywords = "open scraped images folder directory downloads gallery",
+        fn = function()
+            local scraper = require("image_scraper")
+            scraper.openImagesFolder()
+        end
+    },
+
+    -- Terminal, Display & Window Utilities
+    {
+        id = "terminal_toggle",
+        title = "Web Terminal & Mobile QR Link",
+        category = "Terminal",
+        icon = "🐚",
+        shortcut = "⌘⌥M",
+        keywords = "terminal ttyd web shell tailscale qr pairing mobile",
+        fn = function()
+            local tt = require("terminal_toggle")
+            tt.toggle()
         end
     },
     {
@@ -503,11 +187,23 @@ local COMMANDS = {
         title = "Keystroke Visualizer HUD",
         category = "Tools",
         icon = "⌨️",
-        shortcut = "",
-        keywords = "keystroke visualizer hud keys overlay shortcuts",
+        shortcut = "⌃⌥⌘K",
+        keywords = "keystroke visualizer hud keys overlay shortcuts demo",
         fn = function()
             local kv = require("keystroke_visualizer")
             kv.toggle()
+        end
+    },
+    {
+        id = "nightshade_toggle",
+        title = "Nightshade: Toggle Screen Redshift",
+        category = "Display",
+        icon = "🌅",
+        shortcut = "",
+        keywords = "nightshade redshift flux orange warm screen overlay display",
+        fn = function()
+            local ns = require("nightshade")
+            ns.toggle()
         end
     },
     {
@@ -742,8 +438,8 @@ local PALETTE_HTML = [=[
 <body>
   <div class="search-container">
     <span class="search-icon">⚡</span>
-    <span id="modeBadge" class="mode-badge">Code</span>
-    <input type="text" id="searchInput" class="search-input" placeholder="Type a command, or zk, code, chat..." autofocus>
+    <span id="modeBadge" class="mode-badge">AI Chat</span>
+    <input type="text" id="searchInput" class="search-input" placeholder="Search commands or type /chat to open AI..." autofocus>
   </div>
 
   <div id="listContainer" class="list-container"></div>
@@ -755,7 +451,7 @@ local PALETTE_HTML = [=[
       <span><span class="hint-key">esc</span> Dismiss</span>
     </div>
     <div style="opacity: 0.8;">
-      <b>64blit Powerhouse</b>
+      <b>Hammerspoon Powerhouse</b>
     </div>
   </div>
 
@@ -822,24 +518,10 @@ local PALETTE_HTML = [=[
     function filterCommands() {
       const raw = searchInput.value.trim();
       const q = raw.toLowerCase();
-      
+
       if (!raw) {
         modeBadge.style.display = 'none';
         filtered = [...ALL_COMMANDS];
-      } else if (q.startsWith('/code ') || q.startsWith('code ') || q.startsWith('/search ') || q.startsWith('search ')) {
-        modeBadge.style.display = 'inline-block';
-        modeBadge.textContent = 'Code Intel';
-        const searchQ = raw.replace(/^\/?(?:code|search)\s+/i, '');
-        filtered = [
-          {
-            id: "custom_code_search",
-            title: `Search Codebase for "${searchQ}"`,
-            category: "Code Intelligence",
-            icon: "🔍",
-            shortcut: "↵",
-            query: searchQ
-          }
-        ];
       } else if (q.startsWith('/chat ') || q.startsWith('chat ') || q.startsWith('/ai ') || q.startsWith('ai ')) {
         modeBadge.style.display = 'inline-block';
         modeBadge.textContent = 'AI Chat';
@@ -847,33 +529,11 @@ local PALETTE_HTML = [=[
         filtered = [
           {
             id: "custom_chat",
-            title: `Ask AI: "${chatQ}"`,
+            title: `Open AI Chatbox: "${chatQ}"`,
             category: "AI Copilot",
             icon: "💬",
             shortcut: "↵",
             query: chatQ
-          }
-        ];
-      } else if (q.startsWith('/zk ') || q.startsWith('zk ') || q.startsWith('/note ') || q.startsWith('note ')) {
-        modeBadge.style.display = 'inline-block';
-        modeBadge.textContent = 'Zettelkasten';
-        const noteQ = raw.replace(/^\/?(?:zk|note)\s+/i, '');
-        filtered = [
-          {
-            id: "custom_zk",
-            title: `Search Memory Notes for "${noteQ}"`,
-            category: "Knowledge Memory",
-            icon: "🧠",
-            shortcut: "↵",
-            query: noteQ
-          },
-          {
-            id: "zk_create_custom",
-            title: `Create New Note: "${noteQ}"`,
-            category: "Knowledge Memory",
-            icon: "📝",
-            shortcut: "",
-            query: noteQ
           }
         ];
       } else {
@@ -885,30 +545,13 @@ local PALETTE_HTML = [=[
           return matchTitle || matchCat || matchKw;
         });
 
-        filtered = [
-          ...matched,
-          {
-            id: "custom_zk",
-            title: `Search Memory Notes for "${raw}"`,
-            category: "Knowledge Memory",
-            icon: "🧠",
-            shortcut: "",
-            query: raw
-          },
-          {
-            id: "custom_code_search",
-            title: `Search Codebase for "${raw}"`,
-            category: "Code Intelligence",
-            icon: "🔍",
-            shortcut: "",
-            query: raw
-          },
+        filtered = matched.length > 0 ? matched : [
           {
             id: "custom_chat",
-            title: `Ask AI Copilot: "${raw}"`,
+            title: `Ask AI Chatbox: "${raw}"`,
             category: "AI Copilot",
             icon: "💬",
-            shortcut: "",
+            shortcut: "↵",
             query: raw
           }
         ];
@@ -922,8 +565,6 @@ local PALETTE_HTML = [=[
       if (idx >= 0 && idx < filtered.length) {
         const cmd = filtered[idx];
         sendToHammerspoon({ action: cmd.id, query: cmd.query || searchInput.value.trim() });
-      } else if (searchInput.value.trim()) {
-        sendToHammerspoon({ action: "custom_zk", query: searchInput.value.trim() });
       }
     }
 
@@ -999,7 +640,7 @@ function M.toggle()
     local prefs = {}
     prefs.developerExtrasEnabled = true
     paletteWindow = webview.new(rect, prefs, userContent)
-    
+
     paletteWindow:windowStyle(0) -- borderless floating spotlight
     paletteWindow:level(hs.drawing.windowLevels.floating)
     paletteWindow:allowGestures(false)
@@ -1015,7 +656,7 @@ function M.toggle()
     local html = PALETTE_HTML:gsub("COMMANDS_PLACEHOLDER", function() return commandsJson end)
     paletteWindow:html(html)
     paletteWindow:show()
-    
+
     hs.timer.doAfter(0.1, function()
         if paletteWindow then
             local win = paletteWindow:hswindow()
@@ -1034,19 +675,9 @@ end
 function M.handleAction(actionId, query)
     if not actionId then return end
 
-    if actionId == "custom_code_search" or actionId == "code_search_query" then
-        local ci = require("code_intel")
-        ci.toggleSearchHUD(query)
-        return
-    elseif actionId == "custom_chat" then
+    if actionId == "custom_chat" then
         local chat = require("ai_chatbox")
         chat.toggleChatbox()
-        return
-    elseif actionId == "custom_zk" or actionId == "zk_search_notes" then
-        searchZettelkasten(query)
-        return
-    elseif actionId == "zk_create_custom" then
-        promptCreateZettelNote(nil, query)
         return
     end
 

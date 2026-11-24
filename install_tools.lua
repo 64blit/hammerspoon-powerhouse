@@ -32,7 +32,7 @@ local DEPS = {
             "/usr/local/bin/uv",
             HOME .. "/.local/bin/uv",
         },
-        desc = "Fast Python package runner (code_intel, terminal_toggle)",
+        desc = "Fast Python package runner (terminal_toggle QR code)",
     },
 }
 
