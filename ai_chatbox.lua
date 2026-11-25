@@ -633,4 +633,8 @@ function M.toggleChatbox()
     aiChatboxWindow:show()
 end
 
+function M.window()
+    return aiChatboxWindow
+end
+
 return M

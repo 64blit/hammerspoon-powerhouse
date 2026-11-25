@@ -2,6 +2,42 @@
 
 A modular, open-source macOS productivity kit and AI copilot built on [Hammerspoon](https://www.hammerspoon.org/). Every module is self-contained with zero private backend requirements, and the repo uses a clean **public/private separation layer** so you can fork, customize, pull, and push updates without ever losing or leaking API keys, private scripts, or machine-specific paths.
 
+<p align="center">
+  <img src="assets/screenshots/command-palette.png" alt="Unified Command Palette" width="680" />
+</p>
+
+---
+
+## 📸 UI Showcase
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <strong>💬 Floating AI Chatbox (<code>⌃⌥⌘A</code>)</strong><br />
+      <img src="assets/screenshots/ai-chatbox.png" alt="Floating AI Chatbox" width="420" />
+    </td>
+    <td align="center" width="50%">
+      <strong>🈳 Live OCR Screen Translator (<code>⌃⌥⌘Y</code>)</strong><br />
+      <img src="assets/screenshots/screen-translator.png" alt="Live Screen Translator" width="420" />
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <strong>🔍 Mouse Magnifier &amp; Screen Recorder (<code>⌃⌥⌘M</code>)</strong><br />
+      <img src="assets/screenshots/mouse-magnifier.png" alt="Mouse Magnifier and Recorder" width="420" />
+    </td>
+    <td align="center" width="50%">
+      <strong>🖼️ Visual Image Scraper Gallery</strong><br />
+      <img src="assets/screenshots/image-scraper.png" alt="Visual Image Scraper" width="420" />
+    </td>
+  </tr>
+</table>
+
+<p align="center">
+  <strong>🧰 Unified Menubar Hub</strong><br />
+  <img src="assets/screenshots/menubar-hub.png" alt="Unified Menubar Hub" width="320" />
+</p>
+
 ---
 
 ## ✨ What's Included
@@ -183,7 +219,9 @@ The same script is automatically installed as `.git/hooks/pre-commit` when you r
 ├── nightshade.lua             # Software redshift screen tint overlay
 ├── spoons_setup.lua           # ClipboardTool & Caffeine configuration
 ├── install_tools.lua          # In-app one-click Homebrew dependency installer
-├── assets/                    # Static icons & cursor assets
+├── assets/
+│   ├── cursor_hand.png        # Custom magnifier pointer icon
+│   └── screenshots/           # UI showcase screenshots
 └── Spoons/                    # Bundled official Spoons
 ```
 
