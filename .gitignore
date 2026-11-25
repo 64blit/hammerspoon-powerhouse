@@ -1,23 +1,14 @@
-# ==============================================================================
-# Environment & Secrets (NEVER commit)
-# ==============================================================================
+# Environment
 .env
 .env.*
 !.env.example
 
-# ==============================================================================
-# Machine-Local & Private Extensions (NEVER commit)
-# ==============================================================================
+# User overrides & custom modules
 local_init.lua
 *.local.lua
-.privacy-denylist.local
 local/
-private/
-.local_backups/
 
-# ==============================================================================
-# Backups & Editor Artifacts
-# ==============================================================================
+# Backups & Python cache
 *.bak
 *.bak-*
 *.orig
@@ -27,18 +18,14 @@ __pycache__/
 *.pyc
 *.pyo
 
-# ==============================================================================
 # macOS System Files
-# ==============================================================================
 .DS_Store
 .AppleDouble
 .LSOverride
 Icon
 ._*
 
-# ==============================================================================
 # Logs, Compiled Binaries & Runtime Caches
-# ==============================================================================
 *.log
 /terminal_server/ttyd_server
 /terminal_server/ttyd_log.txt
@@ -57,7 +44,7 @@ Icon
 *.mp4
 *.webm
 
-# IDE & Agent Workspace State
+# Editor / IDE state
 .antigravitycli/
 .claude/
 .gemini/

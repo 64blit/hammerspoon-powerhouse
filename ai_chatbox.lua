@@ -602,7 +602,7 @@ function M.toggleChatbox()
 
     local apiKey = env.get("OPENROUTER_API_KEY", "")
     if apiKey == "" then
-        hs.alert.show("OPENROUTER_API_KEY not found in ~/.hammerspoon/.env or ~/.env", 3)
+        hs.alert.show("OPENROUTER_API_KEY not found in ~/.hammerspoon/.env", 3)
     end
 
     local rect = {x = 0, y = 0, w = 600, h = 500}

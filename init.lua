@@ -1,24 +1,16 @@
 -------------------------------------------------
 -- Hammerspoon Powerhouse — Master Entrypoint
 -- Modular macOS productivity & AI copilot kit.
---
--- Public modules live in ~/.hammerspoon/*.lua.
--- Private / machine-specific extensions belong in:
---   • ~/.hammerspoon/.env             (gitignored overrides & API keys)
---   • ~/.hammerspoon/local_init.lua   (gitignored local startup hooks)
---   • ~/.hammerspoon/private/*.lua    (gitignored private Lua modules)
 -------------------------------------------------
 
--- Allow requiring private modules from ~/.hammerspoon/private/ or local/
-package.path = hs.configdir .. "/private/?.lua;"
-    .. hs.configdir .. "/local/?.lua;"
-    .. package.path
+-- Allow requiring custom modules from ~/.hammerspoon/local/
+package.path = hs.configdir .. "/local/?.lua;" .. package.path
 
 -- Enable AppleScript and CLI IPC execution
 hs.allowAppleScript(true)
 pcall(function() require("hs.ipc") end)
 
--- Load environment variables & secrets first
+-- Load environment variables first
 local env = require("env_loader")
 
 local function safeLoad(moduleName)
@@ -79,8 +71,7 @@ if env.getBool("ENABLE_MENUBAR_HUB", true) then
 end
 
 -------------------------------------------------
--- Machine-Local / Private Extensions (gitignored)
--- See local_init.example.lua to get started.
+-- Optional User Extensions (local_init.lua)
 -------------------------------------------------
 local localInitPath = hs.configdir .. "/local_init.lua"
 if hs.fs.attributes(localInitPath) then

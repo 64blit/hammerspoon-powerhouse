@@ -94,7 +94,7 @@ local function refreshHubIcon()
     hub:setTooltip("Hammerspoon Powerhouse")
 end
 
--- Allow local_init.lua or private modules to register additional menubar submenus
+-- Register additional custom submenus in the unified menubar hub
 local function registerTool(tool)
     if type(tool) ~= "table" then return end
     table.insert(tools, tool)

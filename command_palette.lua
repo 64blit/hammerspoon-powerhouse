@@ -693,7 +693,7 @@ function M.handleAction(actionId, query)
     end
 end
 
--- Allow local_init.lua or private modules to register extra palette commands
+-- Register additional custom commands in the Option+Z palette
 function M.registerCommand(cmd)
     if type(cmd) ~= "table" or not cmd.id or not cmd.title then return end
     for i, existing in ipairs(COMMANDS) do

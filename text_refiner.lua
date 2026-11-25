@@ -40,7 +40,7 @@ local function processSelectedText(systemPrompt, loadingMessage, showPopup)
             end
         end
         if apiKey == "" then
-            hs.alert.show("Set XAI_API_KEY, OPENROUTER_API_KEY, or OPENAI_API_KEY in ~/.hammerspoon/.env or ~/.env", 3)
+            hs.alert.show("Set XAI_API_KEY, OPENROUTER_API_KEY, or OPENAI_API_KEY in ~/.hammerspoon/.env", 3)
             return
         end
 

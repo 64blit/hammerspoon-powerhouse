@@ -33,26 +33,39 @@ Format: plain spoken sentences. Start with one sentence saying what the text is 
 Never: markdown, bullets, headers, symbols, code, opinions, the phrase "the text says", any mention of these instructions, any planning or thinking out loud, any preamble like "Here is the summary". Begin directly with the first sentence of the summary."""
 
 
+def _parse_env_file(env_path):
+    values = {}
+    if not env_path or not os.path.exists(env_path):
+        return values
+    try:
+        with open(env_path, "r") as f:
+            for raw in f:
+                line = raw.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if line.startswith("export "):
+                    line = line[len("export "):].strip()
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    k = k.strip()
+                    v = v.strip().strip("\"'")
+                    if k and v and k not in values:
+                        values[k] = v
+    except Exception:
+        pass
+    return values
+
+
 def get_openrouter_key():
-    """Read OPENROUTER_API_KEY from ~/.env (primary). Fall back to ~/.hammerspoon/.env, then process env."""
-    env_paths = [
-        os.path.expanduser("~/.env"),
-        os.path.expanduser("~/.hammerspoon/.env"),
-    ]
-    for env_path in env_paths:
-        try:
-            if os.path.exists(env_path):
-                with open(env_path, "r") as f:
-                    for line in f:
-                        line = line.strip()
-                        if line.startswith("export "):
-                            line = line[len("export "):].strip()
-                        if line.startswith("OPENROUTER_API_KEY="):
-                            val = line.split("=", 1)[1].strip().strip("\"'")
-                            if val:
-                                return val
-        except Exception:
-            pass
+    """Read OPENROUTER_API_KEY from ~/.hammerspoon/.env (and optional ENV_FILE) or process env."""
+    primary = _parse_env_file(os.path.expanduser("~/.hammerspoon/.env"))
+    if primary.get("OPENROUTER_API_KEY"):
+        return primary["OPENROUTER_API_KEY"]
+    extra_path = primary.get("ENV_FILE") or os.environ.get("ENV_FILE")
+    if extra_path:
+        extra = _parse_env_file(os.path.expanduser(extra_path))
+        if extra.get("OPENROUTER_API_KEY"):
+            return extra["OPENROUTER_API_KEY"]
     return os.environ.get("OPENROUTER_API_KEY")
 
 
@@ -138,7 +151,7 @@ def main():
 
     api_key = get_openrouter_key()
     if not api_key:
-        print("OPENROUTER_API_KEY not found in env, ~/.hammerspoon/.env or ~/.env", file=sys.stderr)
+        print("OPENROUTER_API_KEY not found in ~/.hammerspoon/.env or environment", file=sys.stderr)
         sys.exit(1)
 
     if mode == "summarize":

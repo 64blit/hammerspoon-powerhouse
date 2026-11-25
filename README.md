@@ -1,6 +1,6 @@
 # ⚡ Hammerspoon Powerhouse
 
-A modular, open-source macOS productivity kit and AI copilot built on [Hammerspoon](https://www.hammerspoon.org/). Every module is self-contained with zero private backend requirements, and the repo uses a clean **public/private separation layer** so you can fork, customize, pull, and push updates without ever losing or leaking API keys, private scripts, or machine-specific paths.
+A modular, open-source macOS productivity kit and AI copilot built on [Hammerspoon](https://www.hammerspoon.org/). Every module is self-contained, toggleable via `.env`, and accessible from a unified Spotlight-style Command Palette (`⌥Z`) and Menubar Hub (`🧰`).
 
 <p align="center">
   <img src="assets/screenshots/command-palette.png" alt="Unified Command Palette" width="680" />
@@ -45,8 +45,8 @@ A modular, open-source macOS productivity kit and AI copilot built on [Hammerspo
 ### ⚡ 1. Unified Command Palette (`⌥Z`)
 Spotlight-style keyboard launcher for every tool, AI transform, and shortcut:
 - **Fuzzy Search**: Instantly filter and run any installed module or utility.
-- **Quick AI Trigger**: Type `/chat` (or anything unmatched) to jump straight into the floating AI Chatbox.
-- **Extensible**: Add private commands from `local_init.lua` via `command_palette.registerCommand(...)`.
+- **Quick AI Trigger**: Type `/chat <prompt>` to launch the floating AI Chatbox and submit directly.
+- **Extensible**: Add your own commands via `command_palette.registerCommand(...)`.
 
 ### 🔍 2. Mouse Magnifier & Hardware Screen Recorder (`⌃⌥⌘M` / `⌃⌥⌘R`)
 - Smooth cursor-following magnifier spanning from **Fit Whole Screen** (`⌃⌥⌘0`) up to **10x** zoom with click-pulse ring animations.
@@ -55,7 +55,7 @@ Spotlight-style keyboard launcher for every tool, AI transform, and shortcut:
 ### 🔊 3. Multi-Engine Read Aloud & Cliffnotes Summarizer (`⌃⌥S` / `⌃⌥⇧S`)
 - **`⌃⌥S` (Read Verbatim)** / **`⌃⌥⇧S` (Summarize to Spoken Cliffnotes & Read)**.
 - **Multi-Engine Support** (switchable live from the menubar or `TTS_ENGINE` in `.env`):
-  1. **Local Kokoro-82M** (fully offline sentence-chunked synthesis when `KOKORO_TTS_DIR` is configured)
+  1. **Local Kokoro-82M** (offline sentence-chunked synthesis when `KOKORO_TTS_DIR` is configured)
   2. **OpenRouter Cloud TTS** (high-quality speech via `OPENROUTER_API_KEY`)
   3. **macOS `say`** (zero-config built-in offline fallback — works immediately out of the box)
 
@@ -83,7 +83,7 @@ Spotlight-style keyboard launcher for every tool, AI transform, and shortcut:
 - **Keystroke Visualizer** (`⌃⌥⌘K`): Clean on-screen HUD showing modifier chords & keys for demos and screen recordings.
 - **Nightshade**: Click-through software redshift overlay that works even on Apple XDR / Reference Mode displays.
 - **Official Spoons**: Bundled `ClipboardTool` (`⌘⌥V`) and `Caffeine` (`⌃⌥⌘C`).
-- **Unified Menubar Hub (`🧰`)**: Consolidates all tools under one clean icon and supports `menubar_hub.registerTool(...)` for private modules.
+- **Unified Menubar Hub (`🧰`)**: Consolidates all tools under one clean icon and supports `menubar_hub.registerTool(...)` for custom extensions.
 
 ---
 
@@ -103,12 +103,11 @@ cd ~/.hammerspoon
 
 `install.sh` is safe and idempotent:
 - Creates `~/.hammerspoon/.env` from `.env.example` (never overwrites existing files)
-- Creates `~/.hammerspoon/local_init.lua` from `local_init.example.lua` (never overwrites existing files)
-- Installs a **git `pre-commit` privacy guard** so you can never accidentally commit secrets or private paths
+- Creates `~/.hammerspoon/local_init.lua` from `local_init.example.lua` for custom hotkeys and extensions
 - Optionally installs Homebrew dependencies (`ffmpeg`, `gifski`, `uv`, `ttyd`) and builds the OCR/translator helpers
 
 ### 3. Add Optional API Keys
-Edit `~/.hammerspoon/.env` (or keep global keys in `~/.env`):
+Edit `~/.hammerspoon/.env`:
 ```env
 OPENROUTER_API_KEY=sk-or-...
 XAI_API_KEY=xai-...
@@ -121,48 +120,10 @@ XAI_API_KEY=xai-...
 
 ---
 
-## 🔒 Keeping Private Stuff Safe (Never Lose, Never Leak)
+## 🧩 Extending & Customizing
 
-This kit is structured so you can keep `~/.hammerspoon` directly synced with GitHub while keeping private scripts, local paths, and credentials completely isolated:
-
-| Layer | File / Directory | Tracked in Git? | Purpose |
-| :--- | :--- | :---: | :--- |
-| **Secrets & Paths** | `~/.hammerspoon/.env` or `~/.env` | ❌ Gitignored | API keys, local binary/model paths, module `ENABLE_*` flags |
-| **Private Hooks** | `~/.hammerspoon/local_init.lua` | ❌ Gitignored | Machine-specific `require()` calls, custom hotkeys, private startup code |
-| **Private Modules** | `~/.hammerspoon/private/*.lua` | ❌ Gitignored | Private Lua modules (auto-added to `package.path`) |
-| **Local Backups** | `~/.hammerspoon/.local_backups/` | ❌ Gitignored | Personal snapshots and `.bak` files |
-| **Commit Guard** | `scripts/audit_privacy.sh` | ✅ Tracked | Blocks commits containing keys, `/Users/...` paths, `.env`, or external symlinks |
-
-### Extending Privately Without Merge Conflicts
-Copy [`local_init.example.lua`](local_init.example.lua) to `local_init.lua`:
-```lua
--- Load a private module from ~/.hammerspoon/private/
-require("my_internal_helper")
-
--- Register a private command in the Option+Z Command Palette
-require("command_palette").registerCommand({
-    id = "my_private_action",
-    title = "Open Internal Dashboard",
-    category = "Private",
-    icon = "🔒",
-    fn = function() hs.urlevent.openURL("https://internal.example.com") end,
-})
-
--- Add a private submenu to the unified 🧰 Menubar Hub
-require("menubar_hub").registerTool({
-    title = "Internal Tools",
-    icon = function() return "🔒" end,
-    buildMenu = function()
-        return { { title = "Ping", fn = function() hs.alert.show("Pong") end } }
-    end,
-})
-```
-
-### Run the Privacy Audit Anytime
-```bash
-./scripts/audit_privacy.sh
-```
-The same script is automatically installed as `.git/hooks/pre-commit` when you run `./install.sh`.
+- **Toggle any module**: Set `ENABLE_<MODULE>=0` in `~/.hammerspoon/.env` (see [`.env.example`](.env.example)).
+- **Custom hotkeys & modules**: Copy [`local_init.example.lua`](local_init.example.lua) to `local_init.lua` (ignored by Git) to add your own scripts, extra `command_palette.registerCommand(...)` entries, or `menubar_hub.registerTool(...)` submenus without merge conflicts on `git pull`.
 
 ---
 
@@ -186,23 +147,19 @@ The same script is automatically installed as `.git/hooks/pre-commit` when you r
 | `⌘⌥V` | **ClipboardTool** | Open clipboard history manager |
 | `⌃⌥⌘C` | **Caffeine** | Toggle display sleep prevention |
 
-*Disable any module cleanly in `~/.hammerspoon/.env` with `ENABLE_<MODULE>=0` (see [`.env.example`](.env.example)).*
-
 ---
 
 ## 📁 Repository Structure
 
 ```text
 ~/.hammerspoon/
-├── init.lua                   # Master entrypoint, safe module loader & local_init hook
-├── env_loader.lua             # Layered .env loader (~/.hammerspoon/.env -> ~/.env -> OS env)
-├── install.sh                 # Safe, idempotent setup script + pre-commit hook installer
-├── scripts/
-│   └── audit_privacy.sh       # Secret, path & private-file leak scanner
+├── init.lua                   # Master entrypoint & modular loader
+├── env_loader.lua             # .env configuration loader
+├── install.sh                 # Idempotent macOS setup script
 ├── .env.example               # Documented configuration & module toggle template
-├── local_init.example.lua     # Template for private extensions (copy to local_init.lua)
-├── command_palette.lua        # Unified Option+Z Spotlight palette + registerCommand API
-├── menubar_hub.lua            # Unified 🧰 menubar hub + registerTool API
+├── local_init.example.lua     # Template for custom hotkeys & extensions
+├── command_palette.lua        # Unified Option+Z Spotlight palette
+├── menubar_hub.lua            # Unified 🧰 menubar hub
 ├── image_scraper.lua          # Visual webpage image extractor & batch downloader
 ├── ai_chatbox.lua             # Streaming floating AI Chatbox (OpenRouter)
 ├── text_refiner.lua           # In-place dictation polisher & translator
@@ -229,6 +186,6 @@ The same script is automatically installed as `.git/hooks/pre-commit` when you r
 
 ## 🤝 Contributing & License
 
-Contributions, bug reports, and module PRs are welcome! Before committing, run `./scripts/audit_privacy.sh` to verify no local paths or credentials are staged.
+Contributions, bug reports, and module PRs are welcome!
 
 Released under the [MIT License](LICENSE).

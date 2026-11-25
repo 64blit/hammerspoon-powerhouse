@@ -2,7 +2,7 @@
 
 Called by text_to_speech.lua via hs.task.
 
-Configuration (via CLI flags, process environment, ~/.hammerspoon/.env, or ~/.env):
+Configuration (via CLI flags, process environment, or ~/.hammerspoon/.env):
     KOKORO_TTS_DIR       Path to local Kokoro runtime directory containing:
                          .venv/bin/python, engines.py, specs.py, and
                          weights/Kokoro-82M-bf16/ (or override KOKORO_TTS_MODEL_DIR)
@@ -51,28 +51,34 @@ _player: subprocess.Popen | None = None
 _tmpdir: str | None = None
 
 
+def _parse_dotenv(env_path: Path, values: dict[str, str]) -> None:
+    if not env_path.is_file():
+        return
+    try:
+        for raw in env_path.read_text(encoding="utf-8", errors="ignore").splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.startswith("export "):
+                line = line[len("export "):].strip()
+            if "=" not in line:
+                continue
+            key, val = line.split("=", 1)
+            key = key.strip()
+            val = val.strip().strip("\"'")
+            if key and val and key not in values:
+                values[key] = val
+    except OSError:
+        pass
+
+
 def _load_dotenv_values() -> dict[str, str]:
-    """Read key=value pairs from ~/.hammerspoon/.env then ~/.env (first wins)."""
+    """Read key=value pairs from ~/.hammerspoon/.env (and optional ENV_FILE)."""
     values: dict[str, str] = {}
-    for env_path in (Path.home() / ".hammerspoon" / ".env", Path.home() / ".env"):
-        if not env_path.is_file():
-            continue
-        try:
-            for raw in env_path.read_text(encoding="utf-8", errors="ignore").splitlines():
-                line = raw.strip()
-                if not line or line.startswith("#"):
-                    continue
-                if line.startswith("export "):
-                    line = line[len("export "):].strip()
-                if "=" not in line:
-                    continue
-                key, val = line.split("=", 1)
-                key = key.strip()
-                val = val.strip().strip("\"'")
-                if key and val and key not in values:
-                    values[key] = val
-        except OSError:
-            pass
+    _parse_dotenv(Path.home() / ".hammerspoon" / ".env", values)
+    extra = values.get("ENV_FILE") or os.environ.get("ENV_FILE")
+    if extra:
+        _parse_dotenv(Path(os.path.expanduser(extra)), values)
     return values
 
 

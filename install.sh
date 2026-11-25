@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Hammerspoon Powerhouse — Open-Source Kit Installer
+# Hammerspoon Powerhouse — Installer
 #
 # Safe, idempotent setup script:
 #   • Never overwrites existing ~/.hammerspoon/.env or local_init.lua
-#   • Installs optional CLI dependencies & builds native OCR helper
-#   • Installs a git pre-commit privacy guard to prevent accidental leaks
+#   • Installs optional Homebrew CLI dependencies & builds native OCR helper
 #
 # Usage:
 #   ./install.sh                  # interactive setup
@@ -40,8 +39,8 @@ confirm() {
     [[ -z "$reply" || "$reply" =~ ^[Yy]$ ]]
 }
 
-echo "⚡ Hammerspoon Powerhouse — Open-Source Kit Setup"
-echo "=================================================="
+echo "⚡ Hammerspoon Powerhouse — Setup"
+echo "=================================="
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
     echo "❌ This kit requires macOS."
@@ -85,13 +84,11 @@ fi
 
 cd "$TARGET_DIR"
 
-# 3. Provision private / local layer WITHOUT overwriting existing user files
-mkdir -p "$TARGET_DIR/private"
-
+# 3. Provision config templates without overwriting existing files
 if [[ ! -f "$TARGET_DIR/.env" ]]; then
     cp "$TARGET_DIR/.env.example" "$TARGET_DIR/.env"
     chmod 600 "$TARGET_DIR/.env"
-    echo "✅ Created ~/.hammerspoon/.env from .env.example (chmod 600)"
+    echo "✅ Created ~/.hammerspoon/.env from .env.example"
 else
     echo "✅ Preserved existing ~/.hammerspoon/.env"
 fi
@@ -103,22 +100,7 @@ else
     echo "✅ Preserved existing ~/.hammerspoon/local_init.lua"
 fi
 
-# 4. Install git pre-commit privacy guard
-if [[ -d "$TARGET_DIR/.git/hooks" ]]; then
-    HOOK_PATH="$TARGET_DIR/.git/hooks/pre-commit"
-    cat > "$HOOK_PATH" <<'HOOK'
-#!/usr/bin/env bash
-set -euo pipefail
-REPO_ROOT="$(git rev-parse --show-toplevel)"
-if [[ -x "$REPO_ROOT/scripts/audit_privacy.sh" ]]; then
-    "$REPO_ROOT/scripts/audit_privacy.sh" --staged
-fi
-HOOK
-    chmod +x "$HOOK_PATH"
-    echo "✅ Installed git pre-commit privacy guard (.git/hooks/pre-commit)"
-fi
-
-# 5. Optional CLI dependencies & native helpers
+# 4. Optional CLI dependencies & native helpers
 if [[ "$INSTALL_DEPS" == "1" ]]; then
     if command -v brew >/dev/null 2>&1; then
         if confirm "Install optional Homebrew CLI tools (ffmpeg, gifski, uv, ttyd)?"; then
@@ -152,8 +134,6 @@ echo ""
 echo "🎉 Setup Complete!"
 echo "--------------------------------------------------"
 echo "Next steps:"
-echo "  1. Add your API keys (optional) to ~/.hammerspoon/.env or ~/.env"
-echo "  2. Put private modules or custom hotkeys in ~/.hammerspoon/local_init.lua or private/"
-echo "  3. Launch Hammerspoon and grant Accessibility + Screen Recording permissions"
-echo "  4. Press Option + Z (⌥Z) to open the Unified Command Palette!"
-echo "  5. Before sharing/pushing changes, run: ./scripts/audit_privacy.sh"
+echo "  1. Add optional API keys in ~/.hammerspoon/.env"
+echo "  2. Launch Hammerspoon and grant Accessibility + Screen Recording permissions"
+echo "  3. Press Option + Z (⌥Z) to open the Unified Command Palette!"

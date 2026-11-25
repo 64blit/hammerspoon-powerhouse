@@ -1,8 +1,8 @@
 -------------------------------------------------
--- Environment & Secrets Loader
+-- Environment Loader
 -- Loads configuration and API keys from:
---   1. ~/.hammerspoon/.env   (machine-local overrides, gitignored)
---   2. ~/.env                (global user secrets)
+--   1. ~/.hammerspoon/.env
+--   2. Optional file specified by ENV_FILE in ~/.hammerspoon/.env
 --   3. System environment variables (os.getenv)
 -------------------------------------------------
 
@@ -29,11 +29,9 @@ local function parseEnvFile(filePath)
     for line in f:lines() do
         local trimmed = line:match("^%s*(.-)%s*$")
         if trimmed ~= "" and not trimmed:match("^#") then
-            -- Strip optional leading "export "
             local cleaned = trimmed:gsub("^export%s+", "")
             local key, val = cleaned:match("^([%w_]+)%s*=%s*(.*)$")
             if key and val then
-                -- Strip surrounding single or double quotes
                 val = val:match('^"(.*)"$') or val:match("^'(.*)'$") or val
                 if _envCache[key] == nil then
                     _envCache[key] = val
@@ -49,15 +47,14 @@ function M.load()
     if _loaded then return _envCache end
     _envCache = {}
 
-    -- 1. Try ~/.hammerspoon/.env
+    -- 1. Load ~/.hammerspoon/.env
     local localEnv = hs.configdir .. "/.env"
     parseEnvFile(localEnv)
 
-    -- 2. Try ~/.env (user home root)
-    local home = os.getenv("HOME") or ""
-    if home ~= "" then
-        local homeEnv = home .. "/.env"
-        parseEnvFile(homeEnv)
+    -- 2. Optional secondary env file if ENV_FILE is configured
+    local extraEnv = _envCache["ENV_FILE"] or os.getenv("ENV_FILE")
+    if extraEnv and extraEnv ~= "" then
+        parseEnvFile(M.expandPath(extraEnv))
     end
 
     _loaded = true

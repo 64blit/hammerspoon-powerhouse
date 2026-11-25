@@ -1,44 +1,42 @@
 -------------------------------------------------
--- Local / Private Hammerspoon Extensions (Template)
+-- Custom Hammerspoon Extensions (Template)
 --
--- Copy this file to `~/.hammerspoon/local_init.lua` (which is gitignored)
--- to add private modules, machine-specific hotkeys, or extra Command Palette
--- commands without creating git conflicts or risking private leaks.
---
--- You can also drop private `.lua` files into `~/.hammerspoon/private/`
--- (also gitignored) and `require()` them from `local_init.lua`.
+-- Copy this file to `~/.hammerspoon/local_init.lua` to add your own
+-- modules, custom hotkeys, or extra Command Palette / Menubar actions.
+-- Drop additional custom `.lua` modules into `~/.hammerspoon/local/`
+-- and `require()` them here.
 -------------------------------------------------
 
--- Example 1: Load a private module stored in ~/.hammerspoon/private/
--- local ok, myPrivate = pcall(require, "my_private_tool")
--- if not ok then print("[local_init] " .. tostring(myPrivate)) end
+-- Example 1: Load a custom module from ~/.hammerspoon/local/
+-- local ok, myTool = pcall(require, "my_tool")
+-- if not ok then print("[local_init] " .. tostring(myTool)) end
 
--- Example 2: Register a private command in the Option+Z Command Palette
+-- Example 2: Register a custom command in the Option+Z Command Palette
 -- local palette = require("command_palette")
 -- palette.registerCommand({
---     id = "private_deploy",
---     title = "Open Internal Dashboard",
---     category = "Private",
---     icon = "🔒",
---     keywords = "internal dashboard ops",
+--     id = "open_dashboard",
+--     title = "Open Dashboard",
+--     category = "Custom",
+--     icon = "🚀",
+--     keywords = "dashboard web",
 --     fn = function()
---         hs.urlevent.openURL("https://internal.example.com")
+--         hs.urlevent.openURL("https://example.com")
 --     end,
 -- })
 
--- Example 3: Add a private tool submenu to the unified Menubar Hub
+-- Example 3: Add a custom submenu to the unified Menubar Hub
 -- local hub = require("menubar_hub")
 -- hub.registerTool({
---     title = "My Private Tool",
---     icon = function() return "🔒" end,
+--     title = "My Custom Tool",
+--     icon = function() return "🛠️" end,
 --     buildMenu = function()
 --         return {
---             { title = "Run Private Action", fn = function() hs.alert.show("Hello!") end },
+--             { title = "Run Action", fn = function() hs.alert.show("Hello!") end },
 --         }
 --     end,
 -- })
 
--- Example 4: Machine-specific custom hotkey
+-- Example 4: Custom hotkey
 -- hs.hotkey.bind({"ctrl", "alt", "cmd"}, "X", function()
---     hs.alert.show("Custom local shortcut triggered")
+--     hs.alert.show("Custom shortcut triggered")
 -- end)
