@@ -11,8 +11,8 @@ import os
 # Override via env: TTS_MODEL, TTS_VOICE, OPENROUTER_REFERER
 # List models:  curl "https://openrouter.ai/api/v1/models?output_modalities=speech"
 TTS_URL = "https://openrouter.ai/api/v1/audio/speech"
-DEFAULT_MODEL = "qwen/qwen-audio-3.0-tts-flash"
-DEFAULT_VOICE = "loongjohn"  # other option for this model: longanhuan_v3.6
+DEFAULT_MODEL = "google/gemini-2.5-flash-tts"
+DEFAULT_VOICE = "Kore"
 DEFAULT_REFERER = os.environ.get("OPENROUTER_REFERER", "https://github.com/64blit/hammerspoon-powerhouse")
 
 MP3_PATH = "/tmp/hammerspoon_openrouter_tts.mp3"

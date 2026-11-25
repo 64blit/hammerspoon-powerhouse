@@ -29,7 +29,7 @@ local function processSelectedText(systemPrompt, loadingMessage, showPopup)
             apiKey = env.get("OPENROUTER_API_KEY", "")
             if apiKey ~= "" then
                 url = env.get("TEXT_REFINER_URL", "https://openrouter.ai/api/v1/chat/completions")
-                model = env.get("TEXT_REFINER_MODEL", "x-ai/grok-3-mini-beta")
+                model = env.get("TEXT_REFINER_MODEL", "x-ai/grok-4.20")
             end
         end
         if apiKey == "" then

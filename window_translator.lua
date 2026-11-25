@@ -13,9 +13,9 @@
 --     bounding boxes.
 --
 -- Requires:
---   1. translator_helper/ocr_helper  (built by translator_helper/build.sh)
---   2. A macOS Shortcut named `HSTranslate` that accepts text input,
---      runs the "Translate Text" action, and returns the translated text.
+--   1. translator_helper/ocr_helper  (auto-built by translator_helper/build.sh)
+--   2. translator_helper/translate_server/server.js (primary Google Translate HTTP backend)
+--      or translator_helper/bin/translate (optional Apple Translation CLI fallback)
 -------------------------------------------------
 
 -- ===== Config =====
@@ -27,9 +27,6 @@ local MIN_W, MIN_H        = 200, 140
 local SRC_BORDER          = 12      -- thickness of source rect indicator (also drag-grab area)
 local SNAPSHOT_FPS        = 30      -- mirror refresh
 local TRANSLATE_INTERVAL  = 2.5     -- seconds between live re-translates
--- Single shortcut that auto-detects source language and translates to English
--- (or whatever target is configured inside Shortcuts.app).
-local TRANSLATE_SHORTCUT  = "HSTranslate_ko_en"
 local OCR_LANGS           = "ja-JP,zh-Hans,zh-Hant,ko-KR,en-US"
 
 local helperDir   = hs.configdir .. "/translator_helper"
@@ -69,20 +66,23 @@ local srcState = {
 -- translated text overlays start at FIRST_OVERLAY_IDX and are cleared each
 -- translate.
 local IDX = {
-    IMAGE        = 1,
-    BORDER       = 2,
-    DRAG_BG      = 3,
-    DRAG_TEXT    = 4,
-    PAUSE_BG     = 5,
-    PAUSE_TEXT   = 6,
-    TRANS_BG     = 7,
-    TRANS_TEXT   = 8,
-    CLOSE_BG     = 9,
-    CLOSE_TEXT   = 10,
-    RESIZE_BG    = 11,
-    RESIZE_TEXT  = 12,
+    BG           = 1,
+    IMAGE        = 2,
+    TOPBAR_BG    = 3,
+    BORDER       = 4,
+    DRAG_BG      = 5,
+    DRAG_TEXT    = 6,
+    PAUSE_BG     = 7,
+    PAUSE_TEXT   = 8,
+    TRANS_BG     = 9,
+    TRANS_TEXT   = 10,
+    CLOSE_BG     = 11,
+    CLOSE_TEXT   = 12,
+    RESIZE_BG    = 13,
+    RESIZE_TEXT  = 14,
 }
-local FIRST_OVERLAY_IDX = 13
+local FIRST_OVERLAY_IDX = 15
+local translateRunId = 0
 
 -- Control chip geometry (top-left bar)
 local CHIP_Y, CHIP_H = 8, 26
@@ -160,15 +160,14 @@ local function captureSnapshot()
 end
 
 -- Compute scale + offsets used to map snapshot pixel coords to trCanvas
--- coords. Image fills the entire canvas (imageScaling=scaleProportionally),
--- letterboxed and centered. OCR overlays use the same transform so they
--- track the image exactly even if chips overlap the top.
+-- coords below TOP_BAR_H so controls never overlap translated text.
 local function fitScale()
-    if not trCanvas or snapW <= 0 or snapH <= 0 then return 1, 0, 0 end
+    if not trCanvas or snapW <= 0 or snapH <= 0 then return 1, 0, TOP_BAR_H end
     local f = trCanvas:frame()
-    local s = math.min(f.w / snapW, f.h / snapH)
+    local availH = math.max(1, f.h - TOP_BAR_H)
+    local s = math.min(f.w / snapW, availH / snapH)
     local offX = (f.w - snapW * s) / 2
-    local offY = (f.h - snapH * s) / 2
+    local offY = TOP_BAR_H + (availH - snapH * s) / 2
     return s, offX, offY
 end
 
@@ -191,26 +190,52 @@ local function repaintOverlays()
     while trCanvas:elementCount() >= FIRST_OVERLAY_IDX do
         trCanvas:removeElement(trCanvas:elementCount())
     end
+    local f = trCanvas:frame()
     local s, offX, offY = fitScale()
     for _, it in ipairs(lastItems or {}) do
         local x = offX + it.x * s
         local y = offY + it.y * s
         local w = it.w * s
         local h = it.h * s
-        if w > 2 and h > 2 then
+        local txt = it.translated or it.text or ""
+        if w > 2 and h > 2 and txt ~= "" then
+            -- Pad slightly so original source glyphs are completely covered
+            local padX, padY = 6, 3
+            local boxX = math.max(4, x - padX)
+            local boxY = math.max(TOP_BAR_H + 2, y - padY)
+            local boxH = math.max(h + padY * 2, 20)
+            local maxBoxW = math.max(40, f.w - boxX - 8)
+
+            -- Pick crisp readable font size that fits cleanly without clipping
+            local fontSize = math.max(11, math.min(26, math.floor(h * 0.72)))
+            local styled = hs.styledtext.new(txt, { font = { size = fontSize } })
+            local measured = hs.drawing.getTextDrawingSize(styled)
+            local textW = (measured and measured.w or w) + 4
+            while fontSize > 10 and (textW + padX * 2) > maxBoxW do
+                fontSize = fontSize - 1
+                styled = hs.styledtext.new(txt, { font = { size = fontSize } })
+                measured = hs.drawing.getTextDrawingSize(styled)
+                textW = (measured and measured.w or w) + 4
+            end
+            local boxW = math.min(maxBoxW, math.max(w + padX * 2, textW + padX * 2))
+            local textH = (measured and measured.h) or fontSize * 1.25
+            local textY = boxY + math.max(0, (boxH - textH) / 2)
+
             trCanvas:appendElements({
                 type = "rectangle", action = "fill",
-                fillColor = {red=0,green=0,blue=0,alpha=0.82},
-                frame = {x=x, y=y, w=w, h=h},
-                roundedRectRadii = {xRadius=2, yRadius=2},
+                fillColor = { red = 0.06, green = 0.07, blue = 0.10, alpha = 1.0 },
+                strokeColor = { white = 1, alpha = 0.16 },
+                strokeWidth = 1,
+                frame = { x = boxX, y = boxY, w = boxW, h = boxH },
+                roundedRectRadii = { xRadius = 5, yRadius = 5 },
             })
             trCanvas:appendElements({
                 type = "text",
-                text = it.translated or it.text or "",
-                textSize = math.max(9, math.floor(h * 0.72)),
-                textColor = {white=1, alpha=1},
+                text = txt,
+                textSize = fontSize,
+                textColor = { white = 0.98, alpha = 1 },
                 textAlignment = "left",
-                frame = {x=x+3, y=y, w=w-6, h=h},
+                frame = { x = boxX + padX, y = textY, w = boxW - padX * 2, h = boxH },
             })
         end
     end
@@ -234,8 +259,6 @@ local function refreshControlVisuals()
     trCanvas[IDX.CLOSE_BG].frame  = {x=closeX, y=CHIP_Y, w=CLOSE_W, h=CHIP_H}
     trCanvas[IDX.CLOSE_TEXT].frame = {x=closeX, y=CHIP_Y+3, w=CLOSE_W, h=CHIP_H-4}
 end
-
-local function shortcutName() return TRANSLATE_SHORTCUT end
 
 -- ===== Translation pipeline =====
 -- Dual-backend translation engine:
@@ -279,6 +302,23 @@ local function getPort()
     return 27892
 end
 
+local function pollServerReady(attemptsLeft, cb)
+    local port = getPort()
+    hs.http.asyncGet("http://127.0.0.1:" .. port .. "/health", nil, function(status, body)
+        if status == 200 and body == "ok" then
+            if cb then cb(true, port) end
+            return
+        end
+        if attemptsLeft <= 1 then
+            if cb then cb(false, nil) end
+            return
+        end
+        hs.timer.doAfter(0.2, function()
+            pollServerReady(attemptsLeft - 1, cb)
+        end)
+    end)
+end
+
 local function ensureServer(cb)
     local port = getPort()
     hs.http.asyncGet("http://127.0.0.1:" .. port .. "/health", nil, function(status, body)
@@ -290,20 +330,23 @@ local function ensureServer(cb)
             if cb then cb(false, nil) end
             return
         end
-        local nodeBin = findNodeBin()
-        serverTask = hs.task.new(nodeBin, function(rc, out, err)
-            print(string.format("[window_translator] translate_server exited rc=%s err=%q", tostring(rc), err or ""))
-            serverTask = nil
-        end, { TRANSLATE_SERVER })
-        if serverTask then
-            serverTask:start()
-            hs.timer.doAfter(0.4, function()
-                local p = getPort()
-                if cb then cb(true, p) end
-            end)
-        else
-            if cb then cb(false, nil) end
+        if not serverTask or not serverTask:isRunning() then
+            os.remove("/tmp/hs_translate_port.txt")
+            local nodeBin = findNodeBin()
+            serverTask = hs.task.new(nodeBin, function(rc, out, err)
+                print(string.format("[window_translator] translate_server exited rc=%s err=%q", tostring(rc), err or ""))
+                serverTask = nil
+            end, { TRANSLATE_SERVER })
+            if not serverTask or not serverTask:start() then
+                serverTask = nil
+                if cb then cb(false, nil) end
+                return
+            end
         end
+        -- Poll /health up to 12 times (2.4s) so first translation never races server boot
+        hs.timer.doAfter(0.2, function()
+            pollServerReady(12, cb)
+        end)
     end)
 end
 
@@ -403,22 +446,33 @@ local function doTranslate()
     lastSrcRect = getSourceRect()
 
     busy = true
+    translateRunId = translateRunId + 1
+    local myRunId = translateRunId
     refreshControlVisuals()
+
+    -- Safety guard: never allow busy state to get permanently wedged
+    hs.timer.doAfter(15, function()
+        if busy and translateRunId == myRunId then
+            print("[window_translator] Translation timed out; resetting busy state")
+            busy = false
+            refreshControlVisuals()
+        end
+    end)
 
     local tmpPath = os.tmpname() .. ".png"
     img:saveToFile(tmpPath)
-    -- Read actual PNG pixel dims so snapW/snapH match the coordinate space
-    -- the OCR helper sees. No more points-vs-pixels guesswork.
     local pw, ph = pngPixelSize(tmpPath)
     if pw and ph then
         snapW, snapH = pw, ph
     else
         snapW, snapH = snapshotPixelSize(img)
     end
+    layoutImageElement()
 
     local task = hs.task.new(OCR_HELPER,
         function(rc, sout, serr)
             os.remove(tmpPath)
+            if translateRunId ~= myRunId or not trCanvas then return end
             if rc ~= 0 then
                 busy = false
                 print("[window_translator] OCR error rc=" .. tostring(rc) .. " : " .. (serr or ""))
@@ -432,6 +486,7 @@ local function doTranslate()
                 return
             end
             translateBatch(items, function(translated)
+                if translateRunId ~= myRunId or not trCanvas then return end
                 lastItems = translated
                 busy = false
                 refreshControlVisuals()
@@ -539,17 +594,14 @@ local function loadSrcFrame()
     local h = hs.settings.get("translator_src_h") or SRC_DEFAULT_H
     local x = hs.settings.get("translator_src_x")
     local y = hs.settings.get("translator_src_y")
-    local onScreen = false
+    local onLockedScreen = false
     if x and y then
-        for _, scr in pairs(hs.screen.allScreens()) do
-            local s = scr:fullFrame()
-            if (x < s.x + s.w) and (x + w > s.x)
-               and (y < s.y + s.h) and (y + h > s.y) then
-                onScreen = true; break
-            end
+        if (x < sf.x + sf.w) and (x + w > sf.x)
+           and (y < sf.y + sf.h) and (y + h > sf.y) then
+            onLockedScreen = true
         end
     end
-    if not onScreen then
+    if not onLockedScreen then
         local mp = hs.mouse.absolutePosition()
         x = mp.x - w / 2
         y = mp.y - h / 2
@@ -659,18 +711,30 @@ function M.start()
     local trFrame = loadTrFrame()
     trCanvas = hs.canvas.new(trFrame)
 
-    -- 1. Image (snapshot mirror). Frame is set explicitly by
-    --    layoutImageElement so it matches the OCR overlay transform exactly.
+    -- 1. Solid opaque dark background so desktop never bleeds through letterboxing
+    trCanvas[IDX.BG] = {
+        type = "rectangle", action = "fill",
+        fillColor = { red = 0.10, green = 0.11, blue = 0.14, alpha = 1.0 },
+        frame = { x = 0, y = 0, w = "100%", h = "100%" },
+    }
+    -- 2. Image (snapshot mirror). Frame is set explicitly by
+    --    layoutImageElement below TOP_BAR_H so it matches OCR overlays exactly.
     trCanvas[IDX.IMAGE] = {
         type = "image",
-        frame = {x=0, y=0, w="100%", h="100%"},
+        frame = { x = 0, y = TOP_BAR_H, w = "100%", h = trFrame.h - TOP_BAR_H },
         imageScaling = "scaleToFit",
         imageAlignment = "topLeft",
     }
-    -- 2. Border
+    -- 3. Top toolbar strip
+    trCanvas[IDX.TOPBAR_BG] = {
+        type = "rectangle", action = "fill",
+        fillColor = { red = 0.08, green = 0.09, blue = 0.11, alpha = 0.98 },
+        frame = { x = 0, y = 0, w = "100%", h = TOP_BAR_H },
+    }
+    -- 4. Border
     trCanvas[IDX.BORDER] = {
         type = "rectangle", action = "stroke",
-        strokeColor = {white=1, alpha=0.6}, strokeWidth = 2,
+        strokeColor = {white=1, alpha=0.45}, strokeWidth = 2,
         frame = {x=0, y=0, w="100%", h="100%"},
     }
     -- 3 + 4: Drag handle chip (top-left)
@@ -909,8 +973,14 @@ local function buildTrMenu()
               os.remove(OCR_HELPER)
               if ensureHelper() then hs.alert.show("OCR helper built") end
           end },
-        { title = "Edit HSTranslate Shortcut",
-          fn = function() hs.execute("open -a Shortcuts") end },
+        { title = "Restart Translate Server",
+          fn = function()
+              if serverTask then serverTask:terminate(); serverTask = nil end
+              os.remove("/tmp/hs_translate_port.txt")
+              ensureServer(function(ok, port)
+                  hs.alert.show(ok and ("Translate server online (:" .. tostring(port) .. ")") or "Translate server failed — see console", 2)
+              end)
+          end },
         { title = "-" },
         { title = "Hotkeys", disabled = true },
         { title = "  Toggle Overlay     ⌃⌥⌘Y",  disabled = true },
@@ -935,4 +1005,6 @@ return {
     translateNow = M.translateNow,
     togglePause = M.togglePause,
     isOpen = M.isOpen,
+    isBusy = M.isBusy,
+    isPaused = M.isPaused,
 }

@@ -50,6 +50,7 @@ local IMAGE_PICKER_HTML = [=[
     grid-auto-rows: max-content; align-content: start;
   }
   .card {
+    position: relative;
     background: var(--bg-card);
     border: 2px solid var(--border);
     border-radius: 8px;
@@ -73,12 +74,12 @@ local IMAGE_PICKER_HTML = [=[
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .card .check {
-    position: absolute; margin: 6px; width: 20px; height: 20px;
-    border-radius: 50%; background: rgba(0,0,0,0.55);
+    position: absolute; top: 6px; left: 6px; z-index: 2; width: 22px; height: 22px;
+    border-radius: 50%; background: rgba(0,0,0,0.55); border: 1.5px solid rgba(255,255,255,0.4);
     display: flex; align-items: center; justify-content: center;
-    font-size: 12px; color: transparent;
+    font-size: 12px; font-weight: 700; color: transparent;
   }
-  .card.selected .check { background: var(--accent); color: white; }
+  .card.selected .check { background: var(--accent); border-color: white; color: white; }
   .footer {
     padding: 12px 18px;
     background: #181818;
@@ -265,6 +266,10 @@ local function safeFilename(url, index)
     return string.format("%03d-%s", index, name)
 end
 
+local HTTP_HEADERS = {
+    ["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15",
+}
+
 local function downloadImages(urls)
     hs.fs.mkdir(imagesDir)
     local outDir = string.format("%s/%s", imagesDir, os.date("%Y%m%d-%H%M%S"))
@@ -275,7 +280,7 @@ local function downloadImages(urls)
     hs.alert.show(string.format("⬇️ Downloading %d images...", remaining), 2)
 
     for i, url in ipairs(urls) do
-        hs.http.asyncGet(url, nil, function(code, body)
+        hs.http.asyncGet(url, HTTP_HEADERS, function(code, body)
             if code == 200 and body and #body > 0 then
                 local f = io.open(outDir .. "/" .. safeFilename(url, i), "wb")
                 if f then
@@ -312,7 +317,7 @@ end
 function M.scrapeImages(url)
     if not url or url == "" then return end
     hs.alert.show("🖼️ Fetching page images...", 2)
-    hs.http.asyncGet(url, nil, function(code, body)
+    hs.http.asyncGet(url, HTTP_HEADERS, function(code, body)
         print("[image_scraper] fetch: HTTP " .. tostring(code) .. " len " .. tostring(body and #body or 0))
         if code ~= 200 or not body then
             hs.alert.show("❌ Failed to fetch page (HTTP " .. tostring(code) .. ")", 4)

@@ -677,7 +677,11 @@ function M.handleAction(actionId, query)
 
     if actionId == "custom_chat" then
         local chat = require("ai_chatbox")
-        chat.toggleChatbox()
+        if query and query ~= "" and chat.openWithPrompt then
+            chat.openWithPrompt(query)
+        else
+            chat.toggleChatbox()
+        end
         return
     end
 

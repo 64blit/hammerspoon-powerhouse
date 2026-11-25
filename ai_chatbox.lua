@@ -202,7 +202,7 @@ local HTML_CONTENT = [=[
     background-color: var(--code-bg);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 12px;
+    padding: 12px 58px 12px 12px;
     overflow-x: auto;
     margin: 0.6em 0;
     position: relative;
@@ -293,31 +293,31 @@ local HTML_CONTENT = [=[
   <div class="model-row">
     <select id="modelSelect" onchange="toggleCustomModel()">
       <option value="openrouter/auto" selected>Auto (Best Available)</option>
-      <option value="" disabled>── OpenAI ──</option>
-      <option value="openai/gpt-5.4-pro">GPT-5.4 Pro ⭐ (best reasoning)</option>
-      <option value="openai/gpt-5.2">GPT-5.2</option>
-      <option value="openai/gpt-4.1-mini">GPT-4.1 Mini (fast)</option>
-      <option value="openai/o3">o3 (deep thinking)</option>
-      <option value="openai/o4-mini">o4-mini (fast thinking)</option>
-      <option value="" disabled>── Google ──</option>
-      <option value="google/gemini-3-pro">Gemini 3 Pro ⭐ (math/science)</option>
-      <option value="google/gemini-3-flash-preview">Gemini 3 Flash Preview (fast)</option>
-      <option value="google/gemini-3.1-flash-lite-preview:free">Gemini 3.1 Flash Lite (free)</option>
       <option value="" disabled>── Anthropic ──</option>
       <option value="anthropic/claude-opus-4.6">Claude Opus 4.6 ⭐ (coding/agents)</option>
       <option value="anthropic/claude-sonnet-4.6">Claude Sonnet 4.6</option>
+      <option value="" disabled>── OpenAI ──</option>
+      <option value="openai/gpt-5.4-pro">GPT-5.4 Pro ⭐ (best reasoning)</option>
+      <option value="openai/gpt-5.2">GPT-5.2</option>
+      <option value="openai/gpt-5-mini">GPT-5 Mini (fast)</option>
+      <option value="openai/gpt-4.1-mini">GPT-4.1 Mini (fast)</option>
+      <option value="openai/o3">o3 (deep thinking)</option>
+      <option value="" disabled>── Google ──</option>
+      <option value="google/gemini-3-flash-preview">Gemini 3 Flash Preview ⭐ (fast)</option>
+      <option value="google/gemini-2.5-pro">Gemini 2.5 Pro</option>
+      <option value="google/gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (budget)</option>
       <option value="" disabled>── xAI ──</option>
-      <option value="x-ai/grok-4.20-non-reasoning" selected>Grok 4.20 Non-Reasoning ⭐ (fastest & cheapest)</option>
-      <option value="x-ai/grok-4.1-fast">Grok 4.1 Fast (agentic/tools)</option>
-      <option value="x-ai/grok-code-fast-1">Grok Code Fast 1 (coding)</option>
+      <option value="x-ai/grok-4.20">Grok 4.20 ⭐ (fast)</option>
+      <option value="x-ai/grok-4.5">Grok 4.5</option>
       <option value="" disabled>── Others ──</option>
+      <option value="deepseek/deepseek-v4-flash">DeepSeek V4 Flash</option>
       <option value="deepseek/deepseek-v3.2">DeepSeek V3.2</option>
-      <option value="minimax/minimax-m2.5">MiniMax M2.5 (free)</option>
+      <option value="minimax/minimax-m2.5">MiniMax M2.5</option>
       <option value="" disabled>── 🌐 With Internet Search ──</option>
       <option value="openai/gpt-5.2:online">GPT-5.2 :online</option>
       <option value="openai/gpt-4.1-mini:online">GPT-4.1 Mini :online</option>
-      <option value="google/gemini-3-pro:online">Gemini 3 Pro :online</option>
-      <option value="x-ai/grok-4.1-fast:online">Grok 4.1 Fast :online</option>
+      <option value="google/gemini-3-flash-preview:online">Gemini 3 Flash :online</option>
+      <option value="x-ai/grok-4.20:online">Grok 4.20 :online</option>
       <option value="anthropic/claude-sonnet-4.6:online">Claude Sonnet 4.6 :online</option>
       <option value="perplexity/sonar-pro">Perplexity Sonar Pro (search-native)</option>
       <option value="custom">Custom...</option>
@@ -635,6 +635,27 @@ end
 
 function M.window()
     return aiChatboxWindow
+end
+
+function M.openWithPrompt(promptText)
+    if not aiChatboxWindow then
+        M.toggleChatbox()
+    else
+        aiChatboxWindow:show()
+        local win = aiChatboxWindow:hswindow()
+        if win then win:focus() end
+    end
+    if promptText and promptText ~= "" then
+        local encoded = hs.json.encode({ promptText })
+        hs.timer.doAfter(0.55, function()
+            if aiChatboxWindow then
+                aiChatboxWindow:evaluateJavaScript(string.format(
+                    "(function(){ const p = document.getElementById('prompt'); if (p) { p.value = (%s)[0]; sendRequest(); } })();",
+                    encoded
+                ))
+            end
+        end)
+    end
 end
 
 return M

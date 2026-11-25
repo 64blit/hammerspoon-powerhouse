@@ -126,7 +126,7 @@ local function refreshKeyVisIcon()
         keyVisMenu:setTitle("⌨️")
         keyVisMenu:setTooltip("Keystroke Display: ON")
     else
-        keyVisMenu:setTitle("⌨")
+        keyVisMenu:setTitle("⌨️")
         keyVisMenu:setTooltip("Keystroke Display: OFF")
     end
 end
@@ -175,7 +175,7 @@ hs.hotkey.bind({"ctrl", "alt", "cmd"}, "K", toggleKeystrokeVisualizer)
 
 return {
     title = "Keystroke Display",
-    icon = function() return keyVisTap and "⌨️" or "⌨" end,
+    icon = function() return "⌨️" end,
     buildMenu = buildKeyVisMenu,
     menubar = keyVisMenu,
     toggle = toggleKeystrokeVisualizer,
